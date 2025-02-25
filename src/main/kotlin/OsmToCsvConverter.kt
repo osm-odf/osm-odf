@@ -7,21 +7,21 @@ import org.openstreetmap.osmosis.core.task.v0_6.Sink
 import org.openstreetmap.osmosis.pbf2.v0_6.PbfReader
 import java.io.File
 import java.io.FileWriter
-import kotlin.streams.toList
 
 class OsmToCsvConverter(private val inputFile: String)
 {
-    private val tagWriter = FileWriter("tags.csv")
-    private val nodeWriter = FileWriter("nodes.csv")
-    private val wayWriter = FileWriter("ways.csv")
-    private val relationWriter = FileWriter("relations.csv")
+    private val base = inputFile.removeSuffix(".osm.pbf")
+    private val tagWriter = FileWriter("${base}-tags.csv")
+    private val nodeWriter = FileWriter("${base}-nodes.csv")
+    private val wayWriter = FileWriter("${base}-ways.csv")
+    private val relationWriter = FileWriter("${base}-relations.csv")
 
     init
     {
         tagWriter.write("epochMillis,id,key,value\n")
-        nodeWriter.write("epochMillis,id,version,changeset,user,uid,lat,lon\n")
-        wayWriter.write("epochMillis,id,version,changeset,user,uid,geometry\n")
-        relationWriter.write("epochMillis,id,version,changeset,user,uid,members\n")
+        nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
+        wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")
+        relationWriter.write("epochMillis,id,version,changeset,username,uid,members\n")
     }
 
     fun entityColumns(entity: Entity): String
@@ -32,8 +32,7 @@ class OsmToCsvConverter(private val inputFile: String)
     fun convert()
     {
         val reader = PbfReader(File(inputFile), 4)
-        val latitudes = HashMap<Long, Double>()
-        val longitudes = HashMap<Long, Double>()
+        val nodeToLatLon = HashMap<Long, LatLon>()
 
         reader.setSink(object : Sink
         {
@@ -52,17 +51,13 @@ class OsmToCsvConverter(private val inputFile: String)
                     is Node ->
                     {
                         nodeWriter.write("${entityColumns(it)},${it.latitude},${it.longitude}\n")
-                        latitudes[it.id] = it.latitude
-                        longitudes[it.id] = it.longitude
+                        nodeToLatLon[it.id] = LatLon(it.latitude, it.longitude)
                     }
 
                     is Way ->
                     {
-                        for (node in it.wayNodes)
-                        {
-                            val geometry = Wkt.convertToWkt(it.wayNodes.stream().map { LatLon(it.latitude, it.longitude) }.toList())
-                            nodeWriter.write("${entityColumns(it)},${geometry}\n")
-                        }
+                        val geometry = Wkt.convertToWkt(it.wayNodes.stream().map { nodeToLatLon[it.nodeId]!! }.toList())
+                        wayWriter.write("${entityColumns(it)},\"${geometry}\"\n")
                     }
 
                     is Relation ->
@@ -92,7 +87,7 @@ class OsmToCsvConverter(private val inputFile: String)
 
     private fun quote(value: String): String
     {
-        return value.replace("\"", "\\\"")
+        return value.replace("\"", "'")
     }
 }
 

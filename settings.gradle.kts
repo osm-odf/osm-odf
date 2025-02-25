@@ -1,2 +1,2 @@
-rootProject.name = "osm-to-csv"
+rootProject.name = "osm-odf"
 

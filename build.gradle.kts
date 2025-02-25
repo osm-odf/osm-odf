@@ -13,7 +13,7 @@ java {
     }
 }
 
-group = "com.github.jonathanlocke.osm.osm-to-csv"
+group = "osm-odf"
 version = "1.0-SNAPSHOT"
 
 repositories {
