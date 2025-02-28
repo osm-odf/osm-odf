@@ -18,7 +18,7 @@ class OsmToCsvConverter(private val inputFile: String)
 
     init
     {
-        tagWriter.write("epochMillis,id,key,value\n")
+        tagWriter.write("epochMillis,type,id,key,value\n")
         nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
         wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")
         relationWriter.write("epochMillis,id,version,changeset,username,uid,members\n")
@@ -39,11 +39,11 @@ class OsmToCsvConverter(private val inputFile: String)
             override fun process(entityContainer: EntityContainer)
             {
                 val it = entityContainer.entity
-                val timeAndId = "${it.timestamp.time},${it.id}"
 
                 for (tag in it.tags)
                 {
-                    tagWriter.write("${timeAndId},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
+                    val type = it.javaClass.simpleName.lowercase()
+                    tagWriter.write("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
                 }
 
                 when (it)
