@@ -6,6 +6,13 @@ import sys
 import io
 from datetime import datetime
 
+DATA_DIR = "data"
+
+nodes_csv = f"{DATA_DIR}/nodes.csv"
+ways_csv = f"{DATA_DIR}/ways.csv"
+relations_csv = f"{DATA_DIR}/relations.csv"
+tags_csv = f"{DATA_DIR}/tags.csv"
+
 
 def fetch_xml(url):
     """Fetch XML data from a URL and return its content as bytes."""
@@ -149,17 +156,11 @@ def write_csv_dict(rows, csv_file, fieldnames):
 
 
 def main():
-    if len(sys.argv) != 6:
-        print(
-            "Usage: python script.py <url> <nodes.csv> <ways.csv> <relations.csv> <tags.csv>"
-        )
+    if len(sys.argv) != 2:
+        print("Usage: consumer.py <url>")
         sys.exit(1)
 
     url = sys.argv[1]
-    nodes_csv = sys.argv[2]
-    ways_csv = sys.argv[3]
-    relations_csv = sys.argv[4]
-    tags_csv = sys.argv[5]
 
     try:
         xml_data = fetch_xml(url)
