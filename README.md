@@ -16,25 +16,21 @@ The Python consumer script processes OSM minutely diff files and extracts create
 ### Usage
 
 ```bash
-python3 osm-minutely-changes/consumer.py <url> <nodes.csv> <ways.csv> <relations.csv> <tags.csv>
+python3 osm-minutely-changes/consumer.py
 ```
 
-### Example
-
-```bash
-python3 osm-minutely-changes/consumer.py \
-    https://planet.openstreetmap.org/replication/minute/000/001/000.adiff \
-    nodes.csv \
-    ways.csv \
-    relations.csv \
-    tags.csv
-```
+The script will:
+1. Fetch the latest state from OSM's augmented diff API
+2. Download the corresponding diff file
+3. Process only the create actions
+4. Write output files to the `data/` directory
 
 ### Output Files
 
-- `nodes.csv`: Contains created nodes with coordinates
-- `ways.csv`: Contains created ways with WKT geometries
-- `relations.csv`: Contains created relations with member references
-- `tags.csv`: Contains all tags from created elements
+Output files are written to the `data/` directory with fixed names:
+- `data/nodes.csv`: Contains created nodes with coordinates
+- `data/ways.csv`: Contains created ways with WKT geometries  
+- `data/relations.csv`: Contains created relations with member references
+- `data/tags.csv`: Contains all tags from created elements
 
 Each CSV file includes metadata like timestamp, version, changeset, and user information.
