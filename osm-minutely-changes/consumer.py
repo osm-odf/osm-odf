@@ -14,6 +14,14 @@ relations_csv = f"{DATA_DIR}/relations.csv"
 tags_csv = f"{DATA_DIR}/tags.csv"
 
 
+def fetch_state() -> int:
+    """
+    Fetch the current adiff state from OSM https://overpass-api.de/api/augmented_diff_status
+    """
+    response = requests.get("https://overpass-api.de/api/augmented_diff_status")
+    return response.text.strip()
+
+
 def fetch_xml(url):
     """Fetch XML data from a URL and return its content as bytes."""
     response = requests.get(url)
@@ -156,11 +164,15 @@ def write_csv_dict(rows, csv_file, fieldnames):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: consumer.py <url>")
+    if len(sys.argv) != 1:
+        print("Usage: consumer.py")
         sys.exit(1)
 
-    url = sys.argv[1]
+    state = fetch_state()
+    # that gives me the state number
+    # http://overpass-api.de/api/augmented_diff?id=
+    url = f"https://overpass-api.de/api/augmented_diff?id={state}"
+    print(f"Fetching {url}")
 
     try:
         xml_data = fetch_xml(url)
