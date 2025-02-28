@@ -1,4 +1,3 @@
-*.csv
 data/new-mexico/**/*.csv
 **/*.osm.pbf
 .idea/**
