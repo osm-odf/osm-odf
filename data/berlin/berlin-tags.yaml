@@ -1,0 +1,33 @@
+kind: DatasetSnapshot
+version: 1
+content:
+  name: berlin-tags
+  kind: Root
+  metadata:
+    - kind: SetPollingSource
+      fetch:
+        kind: FilesGlob
+        path: berlin-latest-internal-tags.csv
+      read:
+        kind: Csv
+        separator: ","
+        header: true
+        nullValue: ""
+        schema:
+          - epochMillis BIGINT
+          - id BIGINT
+          - '"key" TEXT'
+          - value TEXT
+      preprocess:
+        kind: Sql
+        engine: datafusion
+        query: |
+          SELECT
+            from_unixtime("epochMillis") as created_at, id, key, value
+          FROM input
+      merge:
+        kind: Ledger
+        primaryKey:
+          - id
+    - kind: SetVocab
+      eventTimeColumn: created_at
