@@ -15,6 +15,7 @@ content:
         nullValue: ""
         schema:
         - epochMillis BIGINT
+        - type TEXT
         - id BIGINT
         - '"key" TEXT'
         - value TEXT
