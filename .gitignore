@@ -47,3 +47,9 @@ bin/
 ### Mac OS ###
 .DS_Store
 .aider*
+
+
+nodes.csv
+relations.csv
+tags.csv
+ways.csv

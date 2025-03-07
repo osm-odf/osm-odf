@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import requests
 import xml.etree.ElementTree as ET
+import time
 import csv
 import sys
 import io
 from datetime import datetime
 
-DATA_DIR = "data"
+DATA_DIR = "."
 
 nodes_csv = f"{DATA_DIR}/nodes.csv"
 ways_csv = f"{DATA_DIR}/ways.csv"
@@ -168,66 +169,71 @@ def main():
         print("Usage: consumer.py")
         sys.exit(1)
 
-    state = fetch_state()
-    # that gives me the state number
-    # http://overpass-api.de/api/augmented_diff?id=
-    url = f"https://overpass-api.de/api/augmented_diff?id={state}"
-    print(f"Fetching {url}")
+    while True:
 
-    try:
-        xml_data = fetch_xml(url)
-        nodes_rows, ways_rows, relations_rows, tags_rows = parse_osm_create(xml_data)
+        state = fetch_state()
+        # that gives me the state number
+        # http://overpass-api.de/api/augmented_diff?id=
+        url = f"https://overpass-api.de/api/augmented_diff?id={state}"
+        print(f"Fetching {url}")
 
-        # Write nodes CSV with the specified columns.
-        node_fields = [
-            "epochMillis",
-            "id",
-            "version",
-            "changeset",
-            "username",
-            "uid",
-            "lat",
-            "lon",
-        ]
-        write_csv_dict(nodes_rows, nodes_csv, node_fields)
+        try:
+            xml_data = fetch_xml(url)
+            nodes_rows, ways_rows, relations_rows, tags_rows = parse_osm_create(xml_data)
 
-        # Write ways CSV with the specified columns.
-        way_fields = [
-            "epochMillis",
-            "id",
-            "version",
-            "changeset",
-            "username",
-            "uid",
-            "geometry",
-        ]
-        write_csv_dict(ways_rows, ways_csv, way_fields)
+            # Write nodes CSV with the specified columns.
+            node_fields = [
+                "epochMillis",
+                "id",
+                "version",
+                "changeset",
+                "username",
+                "uid",
+                "lat",
+                "lon",
+            ]
+            write_csv_dict(nodes_rows, nodes_csv, node_fields)
 
-        # Write relations CSV with the specified columns.
-        relation_fields = [
-            "epochMillis",
-            "id",
-            "version",
-            "changeset",
-            "username",
-            "uid",
-            "geometry",
-        ]
-        write_csv_dict(relations_rows, relations_csv, relation_fields)
+            # Write ways CSV with the specified columns.
+            way_fields = [
+                "epochMillis",
+                "id",
+                "version",
+                "changeset",
+                "username",
+                "uid",
+                "geometry",
+            ]
+            write_csv_dict(ways_rows, ways_csv, way_fields)
 
-        # Write tags CSV with the specified columns.
-        tags_fields = ["epochMillis", "type", "id", "key", "value"]
-        write_csv_dict(tags_rows, tags_csv, tags_fields)
+            # Write relations CSV with the specified columns.
+            relation_fields = [
+                "epochMillis",
+                "id",
+                "version",
+                "changeset",
+                "username",
+                "uid",
+                "geometry",
+            ]
+            write_csv_dict(relations_rows, relations_csv, relation_fields)
 
-        print("CSVs written to:")
-        print(f"  Nodes: {nodes_csv}")
-        print(f"  Ways: {ways_csv}")
-        print(f"  Relations: {relations_csv}")
-        print(f"  Tags: {tags_csv}")
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+            # Write tags CSV with the specified columns.
+            tags_fields = ["epochMillis", "type", "id", "key", "value"]
+            write_csv_dict(tags_rows, tags_csv, tags_fields)
 
+            print("CSVs written to:")
+            print(f"  Nodes: {nodes_csv}")
+            print(f"  Ways: {ways_csv}")
+            print(f"  Relations: {relations_csv}")
+            print(f"  Tags: {tags_csv}")
+            
+            print("sleep for 60s...")
+        except Exception as e:
+            print(f"Error: {e}")
+            sys.exit(1)
 
+        time.sleep(60)
+        
 if __name__ == "__main__":
     main()
