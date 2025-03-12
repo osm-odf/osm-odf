@@ -55,7 +55,4 @@ tags.csv
 ways.csv
 
 .kamu
-/data/berlin/berlin-latest-internal-nodes.csv
-/data/berlin/berlin-latest-internal-relations.csv
-/data/berlin/berlin-latest-internal-tags.csv
-/data/berlin/berlin-latest-internal-ways.csv
+/data/berlin/*.csv
