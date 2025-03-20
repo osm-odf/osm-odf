@@ -29,5 +29,12 @@ WORKDIR /app
 # Copy built artifacts from build stage
 COPY --from=build /app/build/libs/*.jar ./app.jar
 
-# Set entrypoint
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Create directory for input files
+RUN mkdir /input
+
+# Set working directory for input files
+WORKDIR /input
+
+# Set entrypoint with default argument
+# ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+CMD ["java", "-jar", "/app/app.jar", "/input/input.osm.pbf"]
