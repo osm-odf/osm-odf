@@ -166,19 +166,19 @@ def parse_osm_create(xml_data):
 
 
 def write_csv_dict(rows, csv_file, fieldnames):
-    """Write rows (a list of dictionaries) to stdout in CSV format with a given header."""
-    # Create a StringIO object to write CSV data
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
-    writer.writeheader()
-    for row in rows:
-        writer.writerow(row)
+    """Write rows (a list of dictionaries) to a CSV file and optionally print to stdout."""
+    # Write to actual file
+    with open(csv_file, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
     
-    # Print to stdout with a header indicating which type of data this is
+    # Print to stdout if verbose
     if VERBOSE:
         print(f"\n--- {csv_file} ---")
-        print(output.getvalue())
-    output.close()
+        with open(csv_file, 'r') as f:
+            print(f.read())
 
 
 def main():
@@ -186,14 +186,8 @@ def main():
         print("Usage: consumer.py")
         sys.exit(1)
 
-    if VERBOSE:
-        print("Fetching state...")
     state = fetch_state()
-    # that gives me the state number
-    # http://overpass-api.de/api/augmented_diff?id=
     url = f"https://overpass-api.de/api/augmented_diff?id={state}"
-    if VERBOSE:
-        print(f"Fetching {url}")
 
     try:
         xml_data = fetch_xml(url)
@@ -247,8 +241,15 @@ def main():
             write_csv_dict(tags_rows, tags_csv, tags_fields)
 
         if VERBOSE:
-            print("CSVs written to:")
-            print(f"  Nodes: {nodes_csv}")
+            print("Processing complete")
+            if NODES:
+                print(f"Processed {len(nodes_rows)} nodes")
+            if WAYS:
+                print(f"Processed {len(ways_rows)} ways")
+            if RELATIONS:
+                print(f"Processed {len(relations_rows)} relations")
+            if TAGS:
+                print(f"Processed {len(tags_rows)} tags")
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
