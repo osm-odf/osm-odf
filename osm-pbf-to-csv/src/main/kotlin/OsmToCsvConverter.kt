@@ -16,6 +16,11 @@ class OsmToCsvConverter(private val inputFile: String)
     private val wayWriter = FileWriter("${base}-ways.csv")
     private val relationWriter = FileWriter("${base}-relations.csv")
 
+    var minLatitude = Double.MAX_VALUE
+    var maxLatitude = Double.MIN_VALUE
+    var minLongitude = Double.MAX_VALUE
+    var maxLongitude = Double.MIN_VALUE
+
     init
     {
         tagWriter.write("epochMillis,type,id,key,value\n")
@@ -51,6 +56,11 @@ class OsmToCsvConverter(private val inputFile: String)
                     is Node ->
                     {
                         nodeWriter.write("${entityColumns(it)},${it.latitude},${it.longitude}\n")
+                        val location = LatLon(it.latitude, it.longitude)
+                        minLatitude = Math.min(minLatitude, location.lat)
+                        maxLatitude = Math.max(maxLatitude, location.lat)
+                        minLongitude = Math.min(minLongitude, location.lon)
+                        maxLongitude = Math.max(maxLongitude, location.lon)
                         nodeToLatLon[it.id] = LatLon(it.latitude, it.longitude)
                     }
 
@@ -83,11 +93,18 @@ class OsmToCsvConverter(private val inputFile: String)
             }
         })
         reader.run()
+        writeBoundsToFile()
+
     }
 
     private fun quote(value: String): String
     {
         return value.replace("\"", "'")
+    }
+
+    private fun writeBoundsToFile() {
+        val boundsFile = File("${base}-bounds.txt")
+        boundsFile.writeText("minLatitude=$minLatitude\nmaxLatitude=$maxLatitude\nminLongitude=$minLongitude\nmaxLongitude=$maxLongitude\n")
     }
 }
 
