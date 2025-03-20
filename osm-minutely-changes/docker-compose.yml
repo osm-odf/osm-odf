@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  osm-minutely-changes:
+    build:
+      context: .
+    restart: no
+    # Output will go to docker logs
+    tty: true
+    environment:
+      - VERBOSE=0
+      - NODES=0
+      - WAYS=0
+      - RELATIONS=0
+      - TAGS=0

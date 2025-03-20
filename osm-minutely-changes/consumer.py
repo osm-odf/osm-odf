@@ -5,15 +5,22 @@ import time
 import csv
 import sys
 import io
+import os
 from datetime import datetime
 
-DATA_DIR = "."
+# epoch in seconds 
+current_epoch = int(time.time())
 
-nodes_csv = f"{DATA_DIR}/nodes.csv"
-ways_csv = f"{DATA_DIR}/ways.csv"
-relations_csv = f"{DATA_DIR}/relations.csv"
-tags_csv = f"{DATA_DIR}/tags.csv"
+nodes_csv = f"nodes_{current_epoch}"
+ways_csv = f"ways_{current_epoch}"
+relations_csv = f"relations_{current_epoch}"
+tags_csv = f"tags_{current_epoch}"
 
+VERBOSE = os.getenv('VERBOSE', '0') == '1'
+NODES = os.getenv('NODES', '0') == '1'
+WAYS = os.getenv('WAYS', '0') == '1'
+RELATIONS = os.getenv('RELATIONS', '0') == '1'
+TAGS = os.getenv('TAGS', '0') == '1'
 
 def fetch_state() -> int:
     """
@@ -26,6 +33,9 @@ def fetch_state() -> int:
 def fetch_xml(url):
     """Fetch XML data from a URL and return its content as bytes."""
     response = requests.get(url)
+    if response.status_code == 429:
+        print(f"Error: Too many requests to {url} (status code 429)")
+        sys.exit(1)
     if response.status_code != 200:
         raise Exception(f"Failed to fetch {url} (status code {response.status_code})")
     return response.content
@@ -156,12 +166,19 @@ def parse_osm_create(xml_data):
 
 
 def write_csv_dict(rows, csv_file, fieldnames):
-    """Write rows (a list of dictionaries) to a CSV file with a given header."""
-    with open(csv_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+    """Write rows (a list of dictionaries) to stdout in CSV format with a given header."""
+    # Create a StringIO object to write CSV data
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+    
+    # Print to stdout with a header indicating which type of data this is
+    if VERBOSE:
+        print(f"\n--- {csv_file} ---")
+        print(output.getvalue())
+    output.close()
 
 
 def main():
@@ -169,32 +186,37 @@ def main():
         print("Usage: consumer.py")
         sys.exit(1)
 
-    while True:
-
-        state = fetch_state()
-        # that gives me the state number
-        # http://overpass-api.de/api/augmented_diff?id=
-        url = f"https://overpass-api.de/api/augmented_diff?id={state}"
+    if VERBOSE:
+        print("Fetching state...")
+    state = fetch_state()
+    # that gives me the state number
+    # http://overpass-api.de/api/augmented_diff?id=
+    url = f"https://overpass-api.de/api/augmented_diff?id={state}"
+    if VERBOSE:
         print(f"Fetching {url}")
 
-        try:
-            xml_data = fetch_xml(url)
-            nodes_rows, ways_rows, relations_rows, tags_rows = parse_osm_create(xml_data)
+    try:
+        xml_data = fetch_xml(url)
+        nodes_rows, ways_rows, relations_rows, tags_rows = parse_osm_create(xml_data)
 
-            # Write nodes CSV with the specified columns.
+        # Write nodes CSV with the specified columns.
+        if VERBOSE:
+            print("\n--- nodes.csv ---")
+        if NODES:
             node_fields = [
-                "epochMillis",
-                "id",
-                "version",
-                "changeset",
-                "username",
-                "uid",
-                "lat",
-                "lon",
-            ]
+                    "epochMillis",
+                    "id",
+                    "version",
+                    "changeset",
+                    "username",
+                    "uid",
+                    "lat",
+                    "lon",
+                ]
             write_csv_dict(nodes_rows, nodes_csv, node_fields)
 
-            # Write ways CSV with the specified columns.
+        # Write ways CSV with the specified columns.
+        if WAYS:
             way_fields = [
                 "epochMillis",
                 "id",
@@ -206,34 +228,30 @@ def main():
             ]
             write_csv_dict(ways_rows, ways_csv, way_fields)
 
-            # Write relations CSV with the specified columns.
+        # Write relations CSV with the specified columns.
+        if RELATIONS:
             relation_fields = [
                 "epochMillis",
                 "id",
                 "version",
                 "changeset",
-                "username",
-                "uid",
+            "username",
+            "uid",
                 "geometry",
             ]
             write_csv_dict(relations_rows, relations_csv, relation_fields)
 
-            # Write tags CSV with the specified columns.
+        # Write tags CSV with the specified columns.
+        if TAGS:
             tags_fields = ["epochMillis", "type", "id", "key", "value"]
             write_csv_dict(tags_rows, tags_csv, tags_fields)
 
+        if VERBOSE:
             print("CSVs written to:")
             print(f"  Nodes: {nodes_csv}")
-            print(f"  Ways: {ways_csv}")
-            print(f"  Relations: {relations_csv}")
-            print(f"  Tags: {tags_csv}")
-            
-            print("sleep for 60s...")
-        except Exception as e:
-            print(f"Error: {e}")
-            sys.exit(1)
-
-        time.sleep(60)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
         
 if __name__ == "__main__":
     main()
