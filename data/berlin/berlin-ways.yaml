@@ -7,7 +7,7 @@ content:
     - kind: SetPollingSource
       fetch:
         kind: FilesGlob
-        path: ways.csv
+        path: ways_*.csv
       read:
         kind: Csv
         separator: ","
