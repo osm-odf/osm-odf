@@ -3,7 +3,7 @@ version: '3'
 services:
   osm-minutely-changes:
     build:
-      context: .
+      context: osm-minutely-changes/
     restart: no
     # Ensure all output goes to docker logs
     tty: true
@@ -19,3 +19,14 @@ services:
       - WAYS
       - RELATIONS
       - TAGS
+  osm-pbf-to-csv:
+    build:
+      context: osm-pbf-to-csv/
+    restart: no
+    tty: true
+    stdin_open: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
