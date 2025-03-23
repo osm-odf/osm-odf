@@ -20,6 +20,7 @@ class OsmToCsvConverter(private val inputFile: String)
     var maxLatitude = Double.MIN_VALUE
     var minLongitude = Double.MAX_VALUE
     var maxLongitude = Double.MIN_VALUE
+    var maxChangesetId = 0L
 
     init
     {
@@ -51,6 +52,8 @@ class OsmToCsvConverter(private val inputFile: String)
                     tagWriter.write("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
                 }
 
+                maxChangesetId = Math.max(maxChangesetId, it.changesetId)
+                
                 when (it)
                 {
                     is Node ->
@@ -94,12 +97,16 @@ class OsmToCsvConverter(private val inputFile: String)
         })
         reader.run()
         writeBoundsToFile()
-
+        writeMaxChangeSetIdToFile()
     }
 
-    private fun quote(value: String): String
-    {
+    private fun quote(value: String): String {
         return value.replace("\"", "'")
+    }
+
+    private fun writeMaxChangeSetIdToFile() {
+        val file = File("${base}-max-changeset-id.txt")
+        file.writeText("maxChangesetId=$maxChangesetId\n")
     }
 
     private fun writeBoundsToFile() {
