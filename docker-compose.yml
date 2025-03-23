@@ -27,3 +27,15 @@ services:
       - ./data:/input
       - ./output:/output
     
+  etag-checker:
+    build:
+      context: ./etag-checker
+    restart: no
+    environment:
+      - ODF_ETAG
+      - ODF_NEW_ETAG_PATH
+    volumes:
+      - ./data:/input
+      - ./output:/output
+    depends_on:
+      - osm-pbf-to-csv
