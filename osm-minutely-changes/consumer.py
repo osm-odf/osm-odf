@@ -8,7 +8,7 @@ import io
 import os
 from datetime import datetime
 
-# epoch in seconds 
+# epoch in seconds
 current_epoch = int(time.time())
 
 nodes_csv = f"nodes_{current_epoch}"
@@ -16,18 +16,16 @@ ways_csv = f"ways_{current_epoch}"
 relations_csv = f"relations_{current_epoch}"
 tags_csv = f"tags_{current_epoch}"
 
-VERBOSE = os.getenv('VERBOSE', '0') == '1'
-NODES = os.getenv('NODES', '0') == '1'
-WAYS = os.getenv('WAYS', '0') == '1'
-RELATIONS = os.getenv('RELATIONS', '0') == '1'
-TAGS = os.getenv('TAGS', '0') == '1'
+VERBOSE = os.getenv("VERBOSE", "0") == "1"
+NODES = os.getenv("NODES", "0") == "1"
+WAYS = os.getenv("WAYS", "0") == "1"
+RELATIONS = os.getenv("RELATIONS", "0") == "1"
+TAGS = os.getenv("TAGS", "0") == "1"
+LATEST_CHANGESET = os.getenv("ODF_ETAG")
+ETAG_PATH = os.getenv("ODF_NEW_ETAG_PATH")
 
-def fetch_state() -> int:
-    """
-    Fetch the current adiff state from OSM https://overpass-api.de/api/augmented_diff_status
-    """
-    response = requests.get("https://overpass-api.de/api/augmented_diff_status")
-    return response.text.strip()
+
+max_changeset_id = LATEST_CHANGESET
 
 
 def fetch_xml(url):
@@ -83,6 +81,9 @@ def parse_osm_create(xml_data):
 
         elem_type = elem.tag
         elem_id = elem.attrib.get("id")
+
+        global max_changeset_id
+        max_changeset_id = max(max_changeset_id, int(elem.attrib.get("changeset")))
 
         # Extract tags for this element (if any)
         for tag in elem.findall("tag"):
@@ -168,16 +169,16 @@ def parse_osm_create(xml_data):
 def write_csv_dict(rows, csv_file, fieldnames):
     """Write rows (a list of dictionaries) to a CSV file and optionally print to stdout."""
     # Write to actual file
-    with open(csv_file, 'w', newline='') as f:
+    with open(csv_file, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
-    
+
     # Print to stdout if verbose
     if VERBOSE:
         print(f"\n--- {csv_file} ---")
-        with open(csv_file, 'r') as f:
+        with open(csv_file, "r") as f:
             print(f.read())
 
 
@@ -186,8 +187,9 @@ def main():
         print("Usage: consumer.py")
         sys.exit(1)
 
-    state = fetch_state()
-    url = f"https://overpass-api.de/api/augmented_diff?id={state}"
+    global max_changeset_id
+
+    url = f"https://overpass-api.de/api/augmented_diff?id={max_changeset_id}"
 
     try:
         xml_data = fetch_xml(url)
@@ -198,15 +200,15 @@ def main():
             print("\n--- nodes.csv ---")
         if NODES:
             node_fields = [
-                    "epochMillis",
-                    "id",
-                    "version",
-                    "changeset",
-                    "username",
-                    "uid",
-                    "lat",
-                    "lon",
-                ]
+                "epochMillis",
+                "id",
+                "version",
+                "changeset",
+                "username",
+                "uid",
+                "lat",
+                "lon",
+            ]
             write_csv_dict(nodes_rows, nodes_csv, node_fields)
 
         # Write ways CSV with the specified columns.
@@ -229,8 +231,8 @@ def main():
                 "id",
                 "version",
                 "changeset",
-            "username",
-            "uid",
+                "username",
+                "uid",
                 "geometry",
             ]
             write_csv_dict(relations_rows, relations_csv, relation_fields)
@@ -253,6 +255,10 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
-        
+
+    with open(ETAG_PATH, "w") as fh:
+        fh.write(max_changeset_id)
+
+
 if __name__ == "__main__":
     main()
