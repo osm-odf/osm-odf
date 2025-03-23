@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   osm-minutely-changes:
     build:
@@ -25,8 +23,7 @@ services:
     restart: no
     tty: true
     stdin_open: true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    volumes:
+      - ./data:/input
+      - ./output:/output
+    

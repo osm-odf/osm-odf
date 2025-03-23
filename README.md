@@ -5,6 +5,27 @@
 
 Convert OSM PBF files to CSV format for [kamu-osm-demo](https://github.com/jonathanlocke/kamu-osm-demo):
 
+### Using Docker
+
+1. Build the image:
+```bash
+docker build -t osm-pbf-to-csv -f osm-pbf-to-csv/Dockerfile .
+```
+
+2. Run the converter with a PBF file:
+```bash
+docker run -v /path/to/your/file.osm.pbf:/input/input.osm.pbf -v /path/to/output:/output osm-pbf-to-csv
+```
+
+3. Output files will be written to the mounted output directory with names:
+- `input-nodes.csv`
+- `input-ways.csv` 
+- `input-relations.csv`
+- `input-tags.csv`
+- `input-bounds.txt`
+
+### Running Directly
+
 ```bash
 OsmToCsvConverter new-mexico-latest.osm.pbf
 ```

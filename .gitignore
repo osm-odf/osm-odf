@@ -1,6 +1,6 @@
 data/new-mexico/**/*.csv
 data/**/*.txt
-**/*.osm.pbf
+# **/*.osm.pbf
 **/.idea/**
 .gradle
 build/
@@ -56,4 +56,4 @@ tags.csv
 ways.csv
 
 .kamu
-/data/berlin/*.csv
+/data/**/*.csv
