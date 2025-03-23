@@ -8,8 +8,7 @@ import org.openstreetmap.osmosis.pbf2.v0_6.PbfReader
 import java.io.File
 import java.io.FileWriter
 
-class OsmToCsvConverter(private val inputFile: String)
-{
+class OsmToCsvConverter(private val inputFile: String, private val outputPath: String) {
     private val base = inputFile.removeSuffix(".osm.pbf")
     private val tagWriter = FileWriter("${base}-tags.csv")
     private val nodeWriter = FileWriter("${base}-nodes.csv")
@@ -105,7 +104,7 @@ class OsmToCsvConverter(private val inputFile: String)
     }
 
     private fun writeMaxChangeSetIdToFile() {
-        val file = File("${base}-max-changeset-id.txt")
+        val file = File(outputPath)
         file.writeText("maxChangesetId=$maxChangesetId\n")
     }
 
@@ -115,13 +114,11 @@ class OsmToCsvConverter(private val inputFile: String)
     }
 }
 
-fun main(args: Array<String>)
-{
-    if (args.isEmpty())
-    {
-        println("Please provide the path to the OSM PBF file as an argument")
+fun main(args: Array<String>) {
+    if (args.size < 2) {
+        println("Please provide the path to the OSM PBF file and the path to a file where the maximum changeset id should be written")
         return
     }
 
-    OsmToCsvConverter(args[0]).convert()
+    OsmToCsvConverter(args[0], args[1]).convert()
 }
