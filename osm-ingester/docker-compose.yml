@@ -1,9 +1,10 @@
 services:
+
   osm-minutely-changes:
     build:
-      context: osm-minutely-changes/
+      context: osm-minutely-changes
+    image: osm-minutely-changes-image
     restart: no
-    # Ensure all output goes to docker logs
     tty: true
     stdin_open: true
     logging:
@@ -17,25 +18,34 @@ services:
       - WAYS
       - RELATIONS
       - TAGS
+      - ODF_NEW_ETAG_PATH="/tmp/etag.txt"
+    entrypoint: ["/bin/sh", "-c", "exit 0"]
+
   osm-pbf-to-csv:
     build:
       context: osm-pbf-to-csv/
+    image: osm-pbf-to-csv-image
     restart: no
     tty: true
     stdin_open: true
     volumes:
-      - ./data:/input
-      - ./output:/output
-    
-  etag-checker:
+      - ../data:/input
+      - ../output:/output
+    environment:
+      - ODF_NEW_ETAG_PATH="/tmp/etag.txt"
+    entrypoint: ["/bin/sh", "-c", "exit 0"]
+
+  osm-ingester:
     build:
-      context: ./etag-checker
+      context: .
+    image: osm-ingester-image
     restart: no
     environment:
       - ODF_ETAG
       - ODF_NEW_ETAG_PATH
     volumes:
-      - ./data:/input
-      - ./output:/output
+      - ../data:/input
+      - ../output:/output
     depends_on:
+      - osm-minutely-changes
       - osm-pbf-to-csv
