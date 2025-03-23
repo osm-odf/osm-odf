@@ -1,6 +1,6 @@
 data/new-mexico/**/*.csv
 data/**/*.txt
-**/*.osm.pbf
+# **/*.osm.pbf
 **/.idea/**
 .gradle
 build/
