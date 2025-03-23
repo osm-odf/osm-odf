@@ -23,13 +23,7 @@ services:
     restart: no
     tty: true
     stdin_open: true
-    # logging:
-    #   driver: "json-file"
-    #   options:
-    #     max-size: "10m"
-    #     max-file: "3"
     volumes:
       - ./data:/input
       - ./output:/output
-    # command: /input/input.osm.pbf
-    # command: sh -c "ls -la /input && ls -la /input/berlin && java -jar /app/app.jar /input/berlin/berlin-latest-internal.osm.pbf"
+    
