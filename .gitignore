@@ -56,4 +56,4 @@ tags.csv
 ways.csv
 
 .kamu
-/data/berlin/*.csv
+/data/**/*.csv

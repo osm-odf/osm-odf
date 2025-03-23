@@ -37,4 +37,4 @@ WORKDIR /input
 
 # Set entrypoint with default argument
 # ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-CMD ["java", "-jar", "/app/app.jar", "/input/input.osm.pbf"]
+CMD ["java", "-jar", "/app/app.jar", "/input/berlin/berlin-latest-internal.osm.pbf"]
