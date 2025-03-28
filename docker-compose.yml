@@ -1,41 +1,14 @@
+
 services:
-  osm-minutely-changes:
-    build:
-      context: osm-minutely-changes/
-    restart: no
-    # Ensure all output goes to docker logs
-    tty: true
-    stdin_open: true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    environment:
-      - VERBOSE
-      - NODES
-      - WAYS
-      - RELATIONS
-      - TAGS
   osm-pbf-to-csv:
-    build:
-      context: osm-pbf-to-csv/
-    restart: no
-    tty: true
-    stdin_open: true
+    build: ./osm-pbf-to-csv
     volumes:
       - ./data:/input
-      - ./output:/output
-    
-  etag-checker:
-    build:
-      context: ./etag-checker
-    restart: no
-    environment:
-      - ODF_ETAG
-      - ODF_NEW_ETAG_PATH
+      - /tmp:/tmp  # Share the host's /tmp
+
+  osm-minutely-changes:
+    build: ./osm-minutely-changes
     volumes:
-      - ./data:/input
+      - ./data:/data
       - ./output:/output
-    depends_on:
-      - osm-pbf-to-csv
+      - /tmp:/tmp  # Share the host's /tmp
