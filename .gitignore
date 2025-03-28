@@ -56,4 +56,5 @@ tags.csv
 ways.csv
 
 .kamu
-/data/**/*.csv
+*.csv
+.venv/
