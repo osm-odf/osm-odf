@@ -58,3 +58,4 @@ ways.csv
 .kamu
 *.csv
 .venv/
+.xml

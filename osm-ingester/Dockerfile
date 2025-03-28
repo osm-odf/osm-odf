@@ -44,7 +44,8 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python script
-COPY osm-minutely-changes/requirements.txt /app/requirements.txt
+WORKDIR /app
+COPY osm-minutely-changes/requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Set up ingester script

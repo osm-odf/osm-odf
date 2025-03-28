@@ -108,3 +108,11 @@ VOLUME /app/data
 
 ENTRYPOINT ["/app/osm-ingester.sh"]
 ```
+
+END OF SESSION:
+
+➜  osm-ingester git:(docker_wip) ✗ docker run osm-ingester:latest
+Checking ODF_ETAG environment variable...
+File /tmp/etag.txt does not exist, ODF_ETAG not set
+Running osm-pbf-to-csv...
+Error: Unable to access jarfile /app/app.jar
