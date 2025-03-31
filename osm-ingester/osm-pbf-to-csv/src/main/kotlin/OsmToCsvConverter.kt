@@ -28,7 +28,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
         tagWriter.write("epochMillis,type,id,key,value\n")
         nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
         wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")
-        relationWriter.write("epochMillis,id,version,changeset,username,uid,members\n")
+        relationWriter.write("epochMillis,id,version,changeset,username,uid\n")
         relationMembersWriter.write("id,memberId,memberRole,memberType\n")
     }
 
