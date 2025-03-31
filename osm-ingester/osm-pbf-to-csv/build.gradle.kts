@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.0.21"
     java
+    application
 }
 
 kotlin {
@@ -35,5 +36,26 @@ tasks.jar {
         attributes["Main-Class"] = "OsmToCsvConverterKt"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Create a task for the OsmMinutelyConsumer
+task("runConsumer", JavaExec::class) {
+    group = "application"
+    description = "Run the OsmMinutelyConsumer"
+    mainClass.set("OsmMinutelyConsumerKt")
+    classpath = sourceSets["main"].runtimeClasspath
+}
+
+// Create a fat JAR for the consumer
+tasks.register<Jar>("consumerJar") {
+    group = "build"
+    description = "Assembles a fat JAR for the OsmMinutelyConsumer"
+    archiveBaseName.set("osm-minutely-consumer")
+    manifest {
+        attributes["Main-Class"] = "OsmMinutelyConsumerKt"
+    }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get())
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
