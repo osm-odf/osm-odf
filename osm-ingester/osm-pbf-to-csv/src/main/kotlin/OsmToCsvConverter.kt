@@ -14,7 +14,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     private val nodeWriter = FileWriter("${base}-nodes.csv")
     private val wayWriter = FileWriter("${base}-ways.csv")
     private val relationWriter = FileWriter("${base}-relations.csv")
-    private val relationMembersWriter = FileWriter("${base}-relations-members.csv")
+    private val membersWriter = FileWriter("${base}-members.csv")
 
     var minLatitude = Double.MAX_VALUE
     var maxLatitude = Double.MIN_VALUE
@@ -29,7 +29,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
         nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
         wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")
         relationWriter.write("epochMillis,id,version,changeset,username,uid\n")
-        relationMembersWriter.write("relationId,memberId,memberRole,memberType\n")
+        membersWriter.write("relationId,memberId,memberRole,memberType\n")
     }
 
     fun entityColumns(entity: Entity): String
@@ -79,7 +79,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     {
                         relationWriter.write("${entityColumns(it)}\n")
                         for (member in it.members) {
-                            relationMembersWriter.write("${it.id},${member.memberId},${member.memberRole},${member.memberType}\n")
+                            membersWriter.write("${it.id},${member.memberId},${member.memberRole},${member.memberType}\n")
                         }
                     }
                 }
@@ -95,7 +95,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                 nodeWriter.close()
                 wayWriter.close()
                 relationWriter.close()
-                relationMembersWriter.close()
+                membersWriter.close()
             }
 
             override fun close()
