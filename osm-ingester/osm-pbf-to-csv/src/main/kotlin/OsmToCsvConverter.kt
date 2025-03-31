@@ -29,7 +29,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
         nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
         wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")
         relationWriter.write("epochMillis,id,version,changeset,username,uid\n")
-        relationMembersWriter.write("id,memberId,memberRole,memberType\n")
+        relationMembersWriter.write("relationId,memberId,memberRole,memberType\n")
     }
 
     fun entityColumns(entity: Entity): String
