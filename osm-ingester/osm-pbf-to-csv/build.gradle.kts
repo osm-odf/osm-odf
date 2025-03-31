@@ -31,6 +31,10 @@ tasks.test {
     useJUnitPlatform()
 }
 
+application {
+    mainClass.set("osm.odf.OsmMinutelyConsumerKt")
+}
+
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "OsmToCsvConverterKt"
@@ -39,15 +43,6 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// Create a task for the OsmMinutelyConsumer
-task("runConsumer", JavaExec::class) {
-    group = "application"
-    description = "Run the OsmMinutelyConsumer"
-    mainClass.set("OsmMinutelyConsumerKt")
-    classpath = sourceSets["main"].runtimeClasspath
-}
-
-// Create a fat JAR for the consumer
 tasks.register<Jar>("consumerJar") {
     group = "build"
     description = "Assembles a fat JAR for the OsmMinutelyConsumer"

@@ -1,4 +1,9 @@
+package osm.odf
+
 import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer
+import org.openstreetmap.osmosis.core.domain.v0_6.WayNode
+import osm.odf.LatLon
+import osm.odf.Wkt
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity
 import org.openstreetmap.osmosis.core.domain.v0_6.Node
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation
@@ -58,7 +63,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     is Node ->
                     {
                         nodeWriter.write("${entityColumns(it)},${it.latitude},${it.longitude}\n")
-                        val location = LatLon(it.latitude, it.longitude)
+                        val location = LatLon(lat = it.latitude, lon = it.longitude)
                         minLatitude = Math.min(minLatitude, location.lat)
                         maxLatitude = Math.max(maxLatitude, location.lat)
                         minLongitude = Math.min(minLongitude, location.lon)
@@ -68,7 +73,12 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
 
                     is Way ->
                     {
-                        val geometry = Wkt.convertToWkt(it.wayNodes.stream().map { nodeToLatLon[it.nodeId]!! }.toList())
+                        val points = it.wayNodes.mapNotNull { wn: WayNode -> 
+                            nodeToLatLon[wn.nodeId]?.let { latLon -> 
+                                LatLon(latLon.lat, latLon.lon) 
+                            }
+                        }
+                        val geometry = if (points.isNotEmpty()) Wkt.convertToWkt(points) else ""
                         wayWriter.write("${entityColumns(it)},\"${geometry}\"\n")
                     }
 
@@ -100,7 +110,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     }
 
     private fun quote(value: String): String {
-        return value.replace("\"", "'")
+        return OsmCommonUtils.quoteCsvValue(value)
     }
 
     private fun writeMaxChangeSetIdToFile() {

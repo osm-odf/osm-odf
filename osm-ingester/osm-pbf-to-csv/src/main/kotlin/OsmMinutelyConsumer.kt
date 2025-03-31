@@ -1,3 +1,5 @@
+package osm.odf
+
 import java.io.File
 import java.io.FileWriter
 import java.net.URI
@@ -237,33 +239,10 @@ class OsmMinutelyConsumer {
     }
     
     /**
-     * Write rows (a list of maps) to a CSV file and optionally print to stdout
+     * Write rows (a list of maps) to a CSV file using shared utils
      */
     private fun writeCsvDict(rows: List<Map<String, Any?>>, csvFile: String, fieldnames: List<String>) {
-        // Write to actual file
-        FileWriter(csvFile).use { writer ->
-            // Write header
-            writer.write(fieldnames.joinToString(",") + "\n")
-            
-            // Write rows
-            for (row in rows) {
-                val values = fieldnames.map { fieldname ->
-                    val value = row[fieldname]
-                    when (value) {
-                        null -> ""
-                        is String -> "\"${value.replace("\"", "'")}\"" 
-                        else -> value.toString()
-                    }
-                }
-                writer.write(values.joinToString(",") + "\n")
-            }
-        }
-        
-        // Print to stdout if verbose
-        if (verbose) {
-            println("\n--- $csvFile ---")
-            File(csvFile).readText().let { println(it) }
-        }
+        OsmCommonUtils.writeCsvDict(rows, csvFile, fieldnames, verbose)
     }
     
     /**

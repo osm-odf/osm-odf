@@ -1,3 +1,5 @@
+package osm.odf
+
 class Wkt
 {
     companion object
