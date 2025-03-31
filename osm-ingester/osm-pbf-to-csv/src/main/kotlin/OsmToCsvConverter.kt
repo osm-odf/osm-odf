@@ -24,6 +24,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
 
     init
     {
+        println("Writing output to: $base-*.csv and $outputPath")
         tagWriter.write("epochMillis,type,id,key,value\n")
         nodeWriter.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
         wayWriter.write("epochMillis,id,version,changeset,username,uid,geometry\n")

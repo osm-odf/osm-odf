@@ -1,6 +1,5 @@
-data/new-mexico/**/*.csv
-data/**/*.txt
-# **/*.osm.pbf
+**/*.csv
+**/*.txt
 **/.idea/**
 .gradle
 build/
