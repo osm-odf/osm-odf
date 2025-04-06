@@ -1,0 +1,3 @@
+[submodule "osm-minutely-changes"]
+	path = osm-ingester/osm-minutely-changes
+	url = git@github.com:osm-odf/osm-odf-minutely-fetcher.git
