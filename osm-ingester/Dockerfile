@@ -16,18 +16,17 @@ COPY osm-pbf-to-csv/src ./src
 # Build the project
 RUN ./gradlew build
 
-# Install Berlin data
-RUN mkdir /input
-RUN mkdir /output
-COPY ../data/berlin/berlin-latest-internal.osm.pbf /input
-
-
 # RUN
 
 FROM openjdk:17-jdk-slim
 
 ENV ODF_ETAG=""
 ENV ODF_NEW_ETAG_PATH="/tmp/etag.txt"
+
+# Install Berlin data
+RUN mkdir -p /input/berlin
+RUN mkdir -p /output/berlin
+COPY ../data/berlin/berlin-latest-internal.osm.pbf /input/berlin
 
 # Copy built artifacts from build stage
 WORKDIR /app

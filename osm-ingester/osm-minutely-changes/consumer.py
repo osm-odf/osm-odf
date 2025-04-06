@@ -24,11 +24,7 @@ WAYS = os.getenv("WAYS", "0") == "1"
 RELATIONS = os.getenv("RELATIONS", "0") == "1"
 MEMBERS = os.getenv("MEMBERS", "0") == "1"
 TAGS = os.getenv("TAGS", "0") == "1"
-LATEST_CHANGESET = os.getenv("ODF_ETAG", 0)
-ETAG_PATH = os.getenv("ODF_NEW_ETAG_PATH")
-
-
-max_changeset_id = LATEST_CHANGESET
+SEQNO = os.getenv("ODF_ETAG", 0)
 
 
 def fetch_xml(url):
@@ -197,15 +193,21 @@ def main():
         print("Usage: consumer.py")
         sys.exit(1)
 
-    global max_changeset_id
-
-    url = f"https://overpass-api.de/api/augmented_diff?id={max_changeset_id}"
+    adiff = osmdiff.AugmentedDiff()
+    adiff.sequence_number = SEQNO
+    adiff.retrieve()
 
     try:
-        xml_data = fetch_xml(url)
-        nodes_rows, ways_rows, relations_rows, members_rows, tags_rows = (
-            parse_osm_create(xml_data)
-        )
+        # FIXME this is not complete yet
+        nodes_rows = [o.attribs for o in adiff.create if isinstance(o, osmdiff.Node)]
+        ways_rows = [o.attribs for o in adiff.create if isinstance(o, osmdiff.Way)]
+        relations_rows = [
+            o.attribs for o in adiff.create if isinstance(o, osmdiff.Relation)
+        ]
+        members_rows = [
+            o.members for o in adiff.create if isinstance(o, osmdiff.Relation)
+        ]
+        tags_rows = [o.tags for o in adiff.create if isinstance(o, osmdiff.Relation)]
 
         # Write nodes CSV with the specified columns.
         if VERBOSE:

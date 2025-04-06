@@ -133,3 +133,14 @@ Then for OSM minutely
 `osm replication minute --since "$(date -r 123456789")" | head -n 1 | awk '{print $1}'`
 
 where 12345... is the epoch timestamp
+
+20250406
+Need to amend shell script with conversion from timestamp to sequence number: 
+something like 
+```
+ODF_ETAG = `osm replication minute --since "$(date -r $ODF_ETAG")" | head -n 1 | awk '{print $1}'`
+```
+
+Then also look at the Python script where we use the osmdiff library
+
+I am going to split out the python project into a git submodule -- easier to work with in the IDE
