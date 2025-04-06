@@ -20,7 +20,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     var maxLatitude = Double.MIN_VALUE
     var minLongitude = Double.MAX_VALUE
     var maxLongitude = Double.MIN_VALUE
-    var maxChangesetId = 0L
+    var maxTimestamp = 0L
 
     init
     {
@@ -54,7 +54,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     tagWriter.write("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
                 }
 
-                maxChangesetId = Math.max(maxChangesetId, it.changesetId)
+                maxTimestamp = Math.max(maxTimestamp, it.timestamp.time)
                 
                 when (it)
                 {
@@ -104,16 +104,16 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
         })
         reader.run()
         writeBoundsToFile()
-        writeMaxChangeSetIdToFile()
+        writeMaxTimestampToFile()
     }
 
     private fun quote(value: String): String {
         return value.replace("\"", "'")
     }
 
-    private fun writeMaxChangeSetIdToFile() {
+    private fun writeMaxTimestampToFile() {
         val file = File(outputPath)
-        file.writeText("maxChangesetId=$maxChangesetId\n")
+        file.writeText("maxTimestamp=$maxTimestamp\n")
     }
 
     private fun writeBoundsToFile() {
@@ -124,7 +124,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
 
 fun main(args: Array<String>) {
     if (args.size < 2) {
-        println("Please provide the path to the OSM PBF file and the path to a file where the maximum changeset id should be written")
+        println("Please provide the path to the OSM PBF file and the path to a file where the maximum timestamp should be written")
         return
     }
 
