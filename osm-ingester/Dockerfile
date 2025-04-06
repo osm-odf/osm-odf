@@ -30,6 +30,7 @@ ENV ODF_ETAG=""
 ENV ODF_NEW_ETAG_PATH="/tmp/etag.txt"
 
 # Copy built artifacts from build stage
+WORKDIR /app
 COPY --from=build /app/build/libs/*.jar ./app.jar
 
 # Install dependencies (curl, bash, gradle, python, and pip)
