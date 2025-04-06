@@ -116,7 +116,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
 
     private fun writeMaxTimestampToFile() {
         val file = File(outputPath)
-        file.writeText("maxTimestamp=$maxTimestamp\n")
+        file.writeText("$maxTimestamp\n")
     }
 
     private fun writeBoundsToFile() {
