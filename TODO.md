@@ -116,3 +116,20 @@ Checking ODF_ETAG environment variable...
 File /tmp/etag.txt does not exist, ODF_ETAG not set
 Running osm-pbf-to-csv...
 Error: Unable to access jarfile /app/app.jar
+
+
+== Sequence numbers and changeset IDs
+
+From pbf to csv we get 
+- latest changeset id
+- latest timestamp
+
+Then for OSM minutely
+
+- convert changeset id or timestamp to sequence
+
+`osm replication minute --since "$(date -v -5M -u +"%Y-%m-%dT%H:%M:%SZ")" | head -n 1 | awk '{print $1}'`
+
+`osm replication minute --since "$(date -r 123456789")" | head -n 1 | awk '{print $1}'`
+
+where 12345... is the epoch timestamp

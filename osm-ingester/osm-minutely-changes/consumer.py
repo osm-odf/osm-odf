@@ -14,14 +14,16 @@ current_epoch = int(time.time())
 nodes_csv = f"nodes_{current_epoch}"
 ways_csv = f"ways_{current_epoch}"
 relations_csv = f"relations_{current_epoch}"
+members_csv = f"members_{current_epoch}"
 tags_csv = f"tags_{current_epoch}"
 
 VERBOSE = os.getenv("VERBOSE", "0") == "1"
 NODES = os.getenv("NODES", "0") == "1"
 WAYS = os.getenv("WAYS", "0") == "1"
 RELATIONS = os.getenv("RELATIONS", "0") == "1"
+MEMBERS = os.getenv("MEMBERS", "0") == "1"
 TAGS = os.getenv("TAGS", "0") == "1"
-LATEST_CHANGESET = os.getenv("ODF_ETAG")
+LATEST_CHANGESET = os.getenv("ODF_ETAG", 0)
 ETAG_PATH = os.getenv("ODF_NEW_ETAG_PATH")
 
 
@@ -52,6 +54,7 @@ def parse_osm_create(xml_data):
     nodes_rows = []
     ways_rows = []
     relations_rows = []
+    members_rows = []
     tags_rows = []
 
     # Process each <action> element
@@ -147,11 +150,8 @@ def parse_osm_create(xml_data):
             }
             ways_rows.append(row)
         elif elem_type == "relation":
-            # For relations, as a simple approach we output a comma-separated list of member refs as geometry.
-            members = elem.findall("member")
-            geometry = ",".join(
-                m.attrib.get("ref") for m in members if m.attrib.get("ref")
-            )
+            # first we append the relation metadata to the relations
+            row = {}
             row = {
                 "epochMillis": epochMillis,
                 "id": elem_id,
@@ -159,11 +159,20 @@ def parse_osm_create(xml_data):
                 "changeset": elem.attrib.get("changeset"),
                 "username": elem.attrib.get("user"),
                 "uid": elem.attrib.get("uid"),
-                "geometry": geometry,
             }
             relations_rows.append(row)
 
-    return nodes_rows, ways_rows, relations_rows, tags_rows
+            # now collect all the members
+            members = elem.findall("member")
+            for elem in members:
+                row = {
+                    "relationId": elem_id,
+                    "memberId": elem.attrib.get("ref"),
+                    "memberRole": elem.attrib.get("role"),
+                    "memberType": elem.attrib.get("type"),
+                }
+
+    return nodes_rows, ways_rows, relations_rows, members_rows, tags_rows
 
 
 def write_csv_dict(rows, csv_file, fieldnames):
@@ -193,7 +202,9 @@ def main():
 
     try:
         xml_data = fetch_xml(url)
-        nodes_rows, ways_rows, relations_rows, tags_rows = parse_osm_create(xml_data)
+        nodes_rows, ways_rows, relations_rows, members_rows, tags_rows = (
+            parse_osm_create(xml_data)
+        )
 
         # Write nodes CSV with the specified columns.
         if VERBOSE:
@@ -237,6 +248,10 @@ def main():
             ]
             write_csv_dict(relations_rows, relations_csv, relation_fields)
 
+        if MEMBERS:
+            members_fields = ["relationId", "memberId", "memberRole", "memberType"]
+            write_csv_dict(members_rows, members_csv, members_fields)
+
         # Write tags CSV with the specified columns.
         if TAGS:
             tags_fields = ["epochMillis", "type", "id", "key", "value"]
@@ -250,12 +265,15 @@ def main():
                 print(f"Processed {len(ways_rows)} ways")
             if RELATIONS:
                 print(f"Processed {len(relations_rows)} relations")
+            if MEMBERS:
+                print(f"Processed {len(members_rows)} members")
             if TAGS:
                 print(f"Processed {len(tags_rows)} tags")
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
 
+    print(f"max changeset id: {max_changeset_id}")
     with open(ETAG_PATH, "w") as fh:
         fh.write(max_changeset_id)
 
