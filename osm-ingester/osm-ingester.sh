@@ -36,7 +36,7 @@ read_etag() {
 #    The Overpass augmented diff sequence number identifying the first minutely
 #    update that occurred after the given timestamp
 #
-timestamp_to_overpass_sequence_number() {
+timestamp_to_sequence_number() {
 
     local timestamp="$1"
 
@@ -59,17 +59,56 @@ update() {
     local sequence_number="$1"
     local sequence_number_output_path="$2"
 
-    # Set environment variables
-    export VERBOSE=0
-    export NODES=0
-    export WAYS=0
-    export RELATIONS=0
-    export TAGS=0
-
     echo "Downloading minutely augmented diff #$sequence_number from Overpass..."
     python osm-minutely-changes/consumer.py "$sequence_number" "$sequence_number_output_path"
     echo "Next sequence number was written to $sequence_number_output_path"
     echo "Done"
+}
+
+#
+# Shows the state of each environment variable that controls output
+#
+show_environment_variables() {
+
+    echo "VERBOSE = $VERBOSE"
+    echo "NODES = $NODES"
+    echo "WAYS = $WAYS"
+    echo "RELATIONS = $RELATIONS"
+    echo "TAGS = $TAGS"
+}
+
+#
+# Ensures that one and only one environment variable that controls output is set
+#
+check_environment_variables() {
+
+    local variables=0
+
+    if [ -n "$VERBOSE" ]; then
+        variables=$((variables + 1))
+    fi
+    if [ -n "$NODES" ]; then
+        variables=$((variables + 1))
+    fi
+    if [ -n "$WAYS" ]; then
+        variables=$((variables + 1))
+    fi
+    if [ -n "$RELATIONS" ]; then
+        variables=$((variables + 1))
+    fi
+    if [ -n "$TAGS" ]; then
+        variables=$((variables + 1))
+    fi
+
+    if [ "$variables" -eq 0 ]; then
+        echo "Error: None of the environment variables (VERBOSE, NODES, WAYS, RELATIONS, TAGS) are set. Please set at least one." >&2
+        exit 1
+    fi
+
+    if [ "$variables" -gt 1 ]; then
+        echo "Error: More than one environment variable (VERBOSE, NODES, WAYS, RELATIONS, TAGS) is set. Please set only one." >&2
+        exit 1
+    fi
 }
 
 #
@@ -84,10 +123,8 @@ update() {
 #
 initialize() {
 
-    local kamu_dataset="$1"
-    local kamu_dataset_path="$2"
-    local osm_pbf_input_path="$3"
-    local timestamp_output_path="$4"
+    local osm_pbf_input_path="$1"
+    local timestamp_output_path="$2"
 
     # Run Kotlin JVM application to extract CSV files from OSM PBF file. The first parameter is a
     # path to an OSM PBF input file. The second parameter is a path to a file where the application
@@ -97,29 +134,19 @@ initialize() {
     local maximum_timestamp=$(cat "$timestamp_output_path")
     echo "Maximum timestamp ($maximum_timestamp) was written to $timestamp_output_path"
     echo "Done"
-
-    # Now, initialize Kamu workspace, add the given dataset and pull the data into Kamu
-    echo "Adding initial snapshot to Kamu"
-    kamu init
-    kamu add "$kamu_dataset_path"
-    kamu pull "$kamu_dataset"
-    echo "Done"
 }
 
 # Kamu Node will set these environment variables
 export ODF_NEW_ETAG_PATH="/tmp/etag.txt"
 export ODF_ETAG=$(read_etag "$ODF_NEW_ETAG_PATH")
 
+show_environment_variables
+check_environment_variables
+
 #
 # Run ingestion process. If
 #
 main() {
-
-    # Name of Kamu dataset
-    local kamu_dataset="berlin"
-
-    # Path to Kamu dataset YAML definition
-    local kamu_dataset_path="/input/berlin/berlin.yaml"
 
     # Path to OSM PBF file to use as initial starting point if ingestion is being initialized
     local osm_pbf_snapshot_path="/input/berlin/berlin-latest-internal.osm.pbf"
@@ -130,26 +157,37 @@ main() {
     echo "ODF_ETAG => $ODF_ETAG"
     echo "ODF_NEW_ETAG_PATH => $ODF_NEW_ETAG_PATH"
 
-    # and if there is no ODF_ETAG value,
+    # and if ODF_ETAG is empty,
     local etag_type
-    if [ -z "$etag" ]; then
+    if [ -z "$ODF_ETAG" ]; then
 
-        # run the OSM PBF to CSV converter Kotlin app to extract initial CSV files from the initial
-        # OSM PBF snapshot file and import them into Kamu Node,
-        initialize "$kamu_dataset" "$kamu_dataset_path" "$osm_pbf_snapshot_path" "$ODF_NEW_ETAG_PATH"
+        # run the OSM PBF to CSV converter Kotlin app on the snapshot to get the initial map data,
+        initialize "$osm_pbf_snapshot_path" "$ODF_NEW_ETAG_PATH"
 
-        # and note that the value output to the etag path is a timestamp,
+        # (noting that the value output to the etag path is a timestamp)
         etag_type="timestamp"
 
     else
 
-        # otherwise, the etag is a Unix timestamp,
-        local timestamp="$etag"
+        local sequence_number
 
-        # so we can convert to an Overpass augmented diff sequence number,
-        local sequence_number=timestamp_to_overpass_sequence_number "$etag"
+        # otherwise, if ODF_ETAG < 0,
+        if [ "$ODF_ETAG" -lt 0 ]; then
 
-        # which we can use to get the next minutely update from Overpass
+            # it's a Unix timestamp written out by initialize() when the PBF snapshot was read,
+            local timestamp="${ODF_ETAG#-}"
+
+            # so we need to convert the timestamp to an Overpass augmented diff sequence number,
+            sequence_number=timestamp_to_sequence_number "$timestamp"
+
+        else
+
+            # but if ODF_ETA >= 0, then ODF_ETAG is the sequence number.
+            sequence_number="$ODF_ETAG"
+
+        fi
+
+        # Use the sequence number to get the next minutely update from Overpass
         # (this process writes the next sequence number to the etag path).
         update "$sequence_number" "$ODF_NEW_ETAG_PATH"
 
