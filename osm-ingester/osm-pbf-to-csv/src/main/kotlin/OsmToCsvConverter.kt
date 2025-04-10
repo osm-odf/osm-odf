@@ -42,11 +42,11 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     var maxTimestamp = 0L
 
     init {
-        if (writeTags) println("epochMillis,type,id,key,value\n")
-        if (writeNodes) println("epochMillis,id,version,changeset,username,uid,lat,lon\n")
-        if (writeWays) println("epochMillis,id,version,changeset,username,uid,geometry\n")
-        if (writeRelations) println("epochMillis,id,version,changeset,username,uid\n")
-        if (writeMembers) println("relationId,memberId,memberRole,memberType\n")
+        if (writeTags) println("epochMillis,type,id,key,value")
+        if (writeNodes) println("epochMillis,id,version,changeset,username,uid,lat,lon")
+        if (writeWays) println("epochMillis,id,version,changeset,username,uid,geometry")
+        if (writeRelations) println("epochMillis,id,version,changeset,username,uid")
+        if (writeMembers) println("relationId,memberId,memberRole,memberType")
     }
 
     fun entityColumns(entity: Entity): String {
@@ -64,7 +64,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                 if (writeTags) {
                     for (tag in it.tags) {
                         val type = it.javaClass.simpleName.lowercase()
-                        println("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
+                        println("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"")
                     }
                 }
 
@@ -73,7 +73,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                 when (it) {
                     is Node -> {
                         if (writeNodes) {
-                            println("${entityColumns(it)},${it.latitude},${it.longitude}\n")
+                            println("${entityColumns(it)},${it.latitude},${it.longitude}")
                         }
                         val location = LatLon(it.latitude, it.longitude)
                         minLatitude = min(minLatitude, location.lat)
@@ -86,17 +86,17 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     is Way -> {
                         if (writeWays) {
                             val geometry = Wkt.convertToWkt(it.wayNodes.stream().map { nodeToLatLon[it.nodeId]!! }.toList())
-                            println("${entityColumns(it)},\"${geometry}\"\n")
+                            println("${entityColumns(it)},\"${geometry}\"")
                         }
                     }
 
                     is Relation -> {
                         if (writeRelations) {
-                            println("${entityColumns(it)}\n")
+                            println(entityColumns(it))
                         }
                         if (writeMembers) {
                             for (member in it.members) {
-                                println("${it.id},${member.memberId},${member.memberRole},${member.memberType}\n")
+                                println("${it.id},${member.memberId},${member.memberRole},${member.memberType}")
                             }
                         }
                     }
