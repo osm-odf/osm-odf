@@ -70,12 +70,11 @@ update() {
 #
 show_environment_variables() {
 
-    echo "VERBOSE = $VERBOSE"
     echo "NODES = $NODES"
     echo "WAYS = $WAYS"
     echo "RELATIONS = $RELATIONS"
     echo "TAGS = $TAGS"
-    echo "TAGS = $MEMBERS"
+    echo "MEMBERS = $MEMBERS"
 }
 
 #
@@ -85,9 +84,6 @@ check_environment_variables() {
 
     local variables=0
 
-    if [ -n "$VERBOSE" ]; then
-        variables=$((variables + 1))
-    fi
     if [ -n "$NODES" ]; then
         variables=$((variables + 1))
     fi
@@ -104,12 +100,12 @@ check_environment_variables() {
         variables=$((variables + 1))
 
     if [ "$variables" -eq 0 ]; then
-        echo "Error: None of the environment variables (VERBOSE, NODES, WAYS, RELATIONS, TAGS, MEMBERS) are set. Please set at least one." >&2
+        echo "Error: None of the environment variables (NODES, WAYS, RELATIONS, TAGS, MEMBERS) are set. Please set at least one." >&2
         exit 1
     fi
 
     if [ "$variables" -gt 1 ]; then
-        echo "Error: More than one environment variable (VERBOSE, NODES, WAYS, RELATIONS, TAGS, MEMBERS) is set. Please set only one." >&2
+        echo "Error: More than one environment variable (NODES, WAYS, RELATIONS, TAGS, MEMBERS) is set. Please set only one." >&2
         exit 1
     fi
 }
