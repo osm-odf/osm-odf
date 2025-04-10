@@ -6,11 +6,11 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Way
 import org.openstreetmap.osmosis.core.task.v0_6.Sink
 import org.openstreetmap.osmosis.pbf2.v0_6.PbfReader
 import java.io.File
-import java.io.FileWriter
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.streams.toList
 
 class OsmToCsvConverter(private val inputFile: String, private val outputPath: String) {
 
@@ -34,11 +34,6 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     private val writeMembers = !System.getenv("MEMBERS").isNullOrEmpty()
 
     private val base = inputFile.removeSuffix(".osm.pbf")
-    private val tagWriter: FileWriter? = if (writeTags) FileWriter("${base}-tags.csv") else null
-    private val nodeWriter: FileWriter? = if (writeNodes) FileWriter("${base}-nodes.csv") else null
-    private val wayWriter: FileWriter? = if (writeWays) FileWriter("${base}-ways.csv") else null
-    private val relationWriter: FileWriter? = if (writeRelations) FileWriter("${base}-relations.csv") else null
-    private val membersWriter: FileWriter? = if (writeMembers) FileWriter("${base}-members.csv") else null
 
     var minLatitude = Double.MAX_VALUE
     var maxLatitude = Double.MIN_VALUE
@@ -47,12 +42,11 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     var maxTimestamp = 0L
 
     init {
-        println("Writing output to: $base-*.csv and $outputPath")
-        tagWriter?.write("epochMillis,type,id,key,value\n")
-        nodeWriter?.write("epochMillis,id,version,changeset,username,uid,lat,lon\n")
-        wayWriter?.write("epochMillis,id,version,changeset,username,uid,geometry\n")
-        relationWriter?.write("epochMillis,id,version,changeset,username,uid\n")
-        membersWriter?.write("relationId,memberId,memberRole,memberType\n")
+        if (writeTags) println("epochMillis,type,id,key,value\n")
+        if (writeNodes) println("epochMillis,id,version,changeset,username,uid,lat,lon\n")
+        if (writeWays) println("epochMillis,id,version,changeset,username,uid,geometry\n")
+        if (writeRelations) println("epochMillis,id,version,changeset,username,uid\n")
+        if (writeMembers) println("relationId,memberId,memberRole,memberType\n")
     }
 
     fun entityColumns(entity: Entity): String {
@@ -70,7 +64,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                 if (writeTags) {
                     for (tag in it.tags) {
                         val type = it.javaClass.simpleName.lowercase()
-                        tagWriter?.write("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
+                        println("${it.timestamp.time},${type},${it.id},\"${quote(tag.key)}\",\"${quote(tag.value)}\"\n")
                     }
                 }
 
@@ -79,7 +73,7 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                 when (it) {
                     is Node -> {
                         if (writeNodes) {
-                            nodeWriter?.write("${entityColumns(it)},${it.latitude},${it.longitude}\n")
+                            println("${entityColumns(it)},${it.latitude},${it.longitude}\n")
                         }
                         val location = LatLon(it.latitude, it.longitude)
                         minLatitude = min(minLatitude, location.lat)
@@ -92,17 +86,17 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     is Way -> {
                         if (writeWays) {
                             val geometry = Wkt.convertToWkt(it.wayNodes.stream().map { nodeToLatLon[it.nodeId]!! }.toList())
-                            wayWriter?.write("${entityColumns(it)},\"${geometry}\"\n")
+                            println("${entityColumns(it)},\"${geometry}\"\n")
                         }
                     }
 
                     is Relation -> {
                         if (writeRelations) {
-                            relationWriter?.write("${entityColumns(it)}\n")
+                            println("${entityColumns(it)}\n")
                         }
                         if (writeMembers) {
                             for (member in it.members) {
-                                membersWriter?.write("${it.id},${member.memberId},${member.memberRole},${member.memberType}\n")
+                                println("${it.id},${member.memberId},${member.memberRole},${member.memberType}\n")
                             }
                         }
                     }
@@ -138,15 +132,6 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
     }
 
     fun closeAllWriters() {
-        try {
-            tagWriter?.close()
-            nodeWriter?.close()
-            wayWriter?.close()
-            relationWriter?.close()
-            membersWriter?.close()
-        } catch (e: Exception) {
-            println("Error closing FileWriters: ${e.message}")
-        }
     }
 }
 
