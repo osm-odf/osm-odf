@@ -98,6 +98,7 @@ check_environment_variables() {
     fi
     if [ -n "$MEMBERS" ]; then
         variables=$((variables + 1))
+    fi
 
     if [ "$variables" -eq 0 ]; then
         echo "Error: None of the environment variables (NODES, WAYS, RELATIONS, TAGS, MEMBERS) are set. Please set at least one." >&2
