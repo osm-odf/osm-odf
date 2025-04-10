@@ -3,6 +3,11 @@
 
 FROM gradle:8.10-jdk17 AS build
 
+RUN apt-get update && \
+    apt-get install -y \
+    gcc \
+    curl
+
 WORKDIR /app
 
 # Prepare to build
@@ -20,8 +25,20 @@ RUN ./gradlew build
 
 FROM openjdk:17-jdk-slim
 
+RUN apt-get update && \
+    apt-get install -y \
+    gcc \
+    curl
+
 ENV ODF_ETAG=""
 ENV ODF_NEW_ETAG_PATH="/tmp/etag.txt"
+
+# ENV PATH="$HOME/.cargo/bin:${PATH}"
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . $HOME/.cargo/env && \
+    cargo install --root /usr/local osm-cli
+
 
 # Install Berlin data
 RUN mkdir -p /input/berlin
@@ -31,6 +48,7 @@ COPY ../data/berlin/berlin-latest-internal.osm.pbf /input/berlin
 # Copy built artifacts from build stage
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar ./app.jar
+# COPY --from=build /usr/local/bin/osm /usr/local/bin/
 
 # Install dependencies (curl, bash, gradle, python, and pip)
 RUN apt-get update && \
@@ -45,7 +63,7 @@ RUN apt-get update && \
 
 # Install python script
 WORKDIR /app
-COPY osm-minutely-changes/requirements.txt .
+COPY osm-minutely-changes/* .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Set up ingester script

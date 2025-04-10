@@ -39,9 +39,18 @@ read_etag() {
 timestamp_to_sequence_number() {
 
     local timestamp="$1"
+    echo "timestamp=$timestamp"
 
-    local since=$(date -r "$timestamp")
-    local sequence_number=$(osm replication minute --since "$since" | head -n 1 | awk '{print $1}')
+    # local seconds=$(( timestamp/1000 ))
+    # echo "seconds=$seconds"
+    # timestamp_rfc3339=$(date -d @"$timestamp" --rfc-3339=seconds)
+    # echo "timestamp_rfc3339=$timestamp_rfc3339"
+    # local since=$(date -d @"$seconds")
+    # echo "since=$since"
+
+    utc_date=$(python3 -c "import time; print(time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime($timestamp/1000)))")
+    echo "utc_date=$utc_date"
+    local sequence_number=$(osm replication minute --since "$utc_date" | head -n 1 | awk '{print $1}')
 
     echo "$sequence_number"
 }
@@ -60,7 +69,7 @@ update() {
     local sequence_number_output_path="$2"
 
     echo "Downloading minutely augmented diff #$sequence_number from Overpass..."
-    python osm-minutely-changes/consumer.py "$sequence_number" "$sequence_number_output_path"
+    python3 /app/consumer.py "$sequence_number" "$sequence_number_output_path"
     echo "Next sequence number was written to $sequence_number_output_path"
     echo "Done"
 }
@@ -178,7 +187,7 @@ main() {
             local timestamp="${ODF_ETAG#-}"
 
             # so we need to convert the timestamp to an Overpass augmented diff sequence number,
-            sequence_number=timestamp_to_sequence_number "$timestamp"
+            sequence_number=$(timestamp_to_sequence_number "$timestamp")
 
         else
 

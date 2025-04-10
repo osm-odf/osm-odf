@@ -144,3 +144,24 @@ ODF_ETAG = `osm replication minute --since "$(date -r $ODF_ETAG")" | head -n 1 |
 Then also look at the Python script where we use the osmdiff library
 
 I am going to split out the python project into a git submodule -- easier to work with in the IDE
+
+
+
+20250410
+
+(base) ➜  osm-ingester git:(main) ✗ docker run -e NODES=1 -v /tmp:/tmp osm-ingester:latest
+NODES = 1
+WAYS = 
+RELATIONS = 
+TAGS = 
+MEMBERS = 
+ODF_ETAG => -1744302620640
+ODF_NEW_ETAG_PATH => /tmp/etag.txt
+Downloading minutely augmented diff #timestamp=1744302620640
+utc_date=2025-04-10T16:30:20Z
+6551207 from Overpass...
+Usage: consumer.py
+
+Need to add output path to script
+So ETAG needs to be written to that path
+and the actual CSV needs to go to STDOUT based on which type is set
