@@ -9,49 +9,15 @@ Convert OSM PBF files to CSV format for [kamu-osm-demo](https://github.com/jonat
 
 1. Build the image:
 ```bash
-docker build -t osm-pbf-to-csv -f osm-pbf-to-csv/Dockerfile .
+docker build -t osm-ingester -f osm-ingester/Dockerfile .
 ```
 
 2. Run the converter with a PBF file:
 ```bash
-docker run -v /path/to/your/file.osm.pbf:/input/input.osm.pbf -v /path/to/output:/output osm-pbf-to-csv
+docker run -e NODES=1 -e ODF_NEW_ETAG_PATH=/tmp/etag.txt -v /tmp:/tmp osm-ingester:latest
 ```
 
-3. Output files will be written to the mounted output directory with names:
-- `input-nodes.csv`
-- `input-ways.csv` 
-- `input-relations.csv`
-- `input-tags.csv`
-- `input-bounds.txt`
+When you first run it, there will not be an `etag.txt` file, so it will create one with a timestamp.
 
-### Running Directly
+The second and subsequent times you run it, it will use the `etag.txt` file to determine which changes to process.
 
-```bash
-OsmToCsvConverter new-mexico-latest.osm.pbf
-```
-
-## 2. Process OSM Minutely Diffs
-
-The Python consumer script processes OSM minutely diff files and extracts create actions into CSV files.
-
-### Usage
-
-```bash
-python3 osm-minutely-changes/consumer.py
-```
-
-The script will:
-1. Fetch the latest state from OSM's augmented diff API
-2. Download the corresponding diff file
-3. Process only the create actions
-4. Write output files to the `data/` directory
-
-### Output Files
-
-Output files are written to the `data/` directory with fixed names:
-- `data/nodes.csv`: Contains created nodes with coordinates
-- `data/ways.csv`: Contains created ways with WKT geometries  
-- `data/relations.csv`: Contains created relations with member references
-- `data/tags.csv`: Contains all tags from created elements
-
-Each CSV file includes metadata like timestamp, version, changeset, and user information.
