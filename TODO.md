@@ -165,3 +165,6 @@ Usage: consumer.py
 Need to add output path to script
 So ETAG needs to be written to that path
 and the actual CSV needs to go to STDOUT based on which type is set
+
+ALso need to add berlin bbox to python script
+
