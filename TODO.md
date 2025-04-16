@@ -168,3 +168,7 @@ and the actual CSV needs to go to STDOUT based on which type is set
 
 ALso need to add berlin bbox to python script
 
+20250416
+
+consecutive runs of the docker container just run the kotlin program over and over. 
+Need to figure out why etag.txt is not being interpreted / loaded / whatever
