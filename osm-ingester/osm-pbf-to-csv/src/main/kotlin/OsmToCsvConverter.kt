@@ -27,11 +27,13 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
         }
     }
 
-    private val writeTags = !System.getenv("TAGS").isNullOrEmpty()
-    private val writeNodes = !System.getenv("NODES").isNullOrEmpty()
-    private val writeWays = !System.getenv("WAYS").isNullOrEmpty()
-    private val writeRelations = !System.getenv("RELATIONS").isNullOrEmpty()
-    private val writeMembers = !System.getenv("MEMBERS").isNullOrEmpty()
+    private fun enabled(envVar: String): Boolean = System.getenv(envVar) == "1"
+
+    private val writeTags = enabled("TAGS")
+    private val writeNodes = enabled("NODES")
+    private val writeWays = enabled("WAYS")
+    private val writeRelations = enabled("RELATIONS")
+    private val writeMembers = enabled("MEMBERS")
 
     private val base = inputFile.removeSuffix(".osm.pbf")
 
