@@ -9,7 +9,8 @@ Convert OSM PBF files to CSV format for [kamu-osm-demo](https://github.com/jonat
 
 1. Build the image:
 ```bash
-docker build -t osm-ingester -f osm-ingester/Dockerfile .
+cd osm-ingester
+docker build -t osm-ingester  .
 ```
 
 2. Run the converter with a PBF file:

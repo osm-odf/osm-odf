@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+VERBOSE=0
+
+say() {
+    
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo "$1"
+    fi
+}
+
 #
 # Reads any ODF "ETAG" value stored in the file at the given path
 #
@@ -23,7 +32,7 @@ read_etag() {
 
     fi
 
-    echo "$etag"
+    say "$etag"
 }
 
 #
@@ -39,11 +48,11 @@ read_etag() {
 timestamp_to_sequence_number() {
     local timestamp="$1"
     # Debug output redirected to stderr
-    echo "timestamp=$timestamp" >&2
+    say "timestamp=$timestamp" >&2
     utc_date=$(python3 -c "import time; print(time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime($timestamp/1000)))")
-    echo "utc_date=$utc_date" >&2
+    say "utc_date=$utc_date" >&2
     local sequence_number=$(osm replication minute --since "$utc_date" | head -n 1 | awk '{print $1}')
-    echo "$sequence_number"
+    say "$sequence_number"
 }
 
 #
@@ -59,10 +68,10 @@ update() {
     local sequence_number="$1"
     local sequence_number_output_path="$2"
 
-    echo "Downloading minutely augmented diff #$sequence_number from Overpass..."
+    say "Downloading minutely augmented diff #$sequence_number from Overpass..."
     python3 /app/consumer.py "$sequence_number" "$sequence_number_output_path"
-    echo "Next sequence number was written to $sequence_number_output_path"
-    echo "Done"
+    say "Next sequence number was written to $sequence_number_output_path"
+    say "Done"
 }
 
 #
@@ -70,11 +79,11 @@ update() {
 #
 show_environment_variables() {
 
-    echo "NODES = $NODES"
-    echo "WAYS = $WAYS"
-    echo "RELATIONS = $RELATIONS"
-    echo "TAGS = $TAGS"
-    echo "MEMBERS = $MEMBERS"
+    say "NODES = $NODES"
+    say "WAYS = $WAYS"
+    say "RELATIONS = $RELATIONS"
+    say "TAGS = $TAGS"
+    say "MEMBERS = $MEMBERS"
 }
 
 #
@@ -101,12 +110,12 @@ check_environment_variables() {
     fi
 
     if [ "$variables" -eq 0 ]; then
-        echo "Error: None of the environment variables (NODES, WAYS, RELATIONS, TAGS, MEMBERS) are set. Please set at least one." >&2
+        say "Error: None of the environment variables (NODES, WAYS, RELATIONS, TAGS, MEMBERS) are set. Please set at least one." >&2
         exit 1
     fi
 
     if [ "$variables" -gt 1 ]; then
-        echo "Error: More than one environment variable (NODES, WAYS, RELATIONS, TAGS, MEMBERS) is set. Please set only one." >&2
+        say "Error: More than one environment variable (NODES, WAYS, RELATIONS, TAGS, MEMBERS) is set. Please set only one." >&2
         exit 1
     fi
 }
@@ -129,11 +138,11 @@ initialize() {
     # Run Kotlin JVM application to extract CSV files from OSM PBF file. The first parameter is a
     # path to an OSM PBF input file. The second parameter is a path to a file where the application
     # should write the maximum UNIX timestamp found in the OSM PBF file.
-    echo "Converting $osm_pbf_input_path to CSV files..."
+    say "Converting $osm_pbf_input_path to CSV files..."
     java -jar /app/app.jar "$osm_pbf_input_path" "$timestamp_output_path"
     local maximum_timestamp=$(cat "$timestamp_output_path")
-    echo "Maximum timestamp ($maximum_timestamp) was written to $timestamp_output_path"
-    echo "Done"
+    say "Maximum timestamp ($maximum_timestamp) was written to $timestamp_output_path"
+    say "Done"
 }
 
 # Kamu Node will set these environment variables
@@ -154,8 +163,8 @@ main() {
     #-----------------------------------------------------------------------
 
     # Show initial environment variables,
-    echo "ODF_ETAG => $ODF_ETAG"
-    echo "ODF_NEW_ETAG_PATH => $ODF_NEW_ETAG_PATH"
+    say "ODF_ETAG => $ODF_ETAG"
+    say "ODF_NEW_ETAG_PATH => $ODF_NEW_ETAG_PATH"
 
     # and if ODF_ETAG is empty,
     local etag_type
@@ -198,7 +207,7 @@ main() {
 
     # Show the new ETAG value written by initialize (will be a Unix timestamp) or update (will be a
     local new_etag=$(read_etag "$ODF_NEW_ETAG_PATH")
-    echo "New ODF_ETAG => $new_etag ($etag_type)"
+    say "New ODF_ETAG => $new_etag ($etag_type)"
 }
 
 main
