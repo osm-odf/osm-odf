@@ -6,6 +6,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Way
 import org.openstreetmap.osmosis.core.task.v0_6.Sink
 import org.openstreetmap.osmosis.pbf2.v0_6.PbfReader
 import java.io.File
+import java.time.Instant
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.math.max
@@ -69,7 +70,9 @@ class OsmToCsvConverter(private val inputFile: String, private val outputPath: S
                     }
                 }
 
-                maxTimestamp = max(maxTimestamp, it.timestamp.time)
+                if (it is Node || it is Way || it is Relation) {
+                    maxTimestamp = max(maxTimestamp, it.timestamp.time)
+                }
 
                 when (it) {
                     is Node -> {
