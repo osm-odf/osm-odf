@@ -172,3 +172,8 @@ ALso need to add berlin bbox to python script
 
 consecutive runs of the docker container just run the kotlin program over and over. 
 Need to figure out why etag.txt is not being interpreted / loaded / whatever
+
+20250509
+
+The OsmToCsvConverter app reads berlin-latest-internal.osm.pbf and finds the max
+timestamp to be something in recent time like the last few minutes. WHY!??!

@@ -10,7 +10,6 @@ import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.streams.toList
 
 class OsmToCsvConverter(private val inputFile: String, private val outputPath: String) {
 
