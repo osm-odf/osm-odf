@@ -58,3 +58,6 @@ ways.csv
 *.csv
 .venv/
 .xml
+
+## Python
+__pycache__
