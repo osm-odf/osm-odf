@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-VERBOSE=0
+VERBOSE=1
 
 say() {
-    
+
     if [ "$VERBOSE" -eq 1 ]; then
         echo "$1"
     fi
@@ -47,11 +47,12 @@ read_etag() {
 #
 timestamp_to_sequence_number() {
     local timestamp="$1"
-    # Debug output redirected to stderr
     say "timestamp=$timestamp" >&2
     utc_date=$(python3 -c "import time; print(time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime($timestamp/1000)))")
     say "utc_date=$utc_date" >&2
-    local sequence_number=$(osm replication minute --since "$utc_date" | head -n 1 | awk '{print $1}')
+    local seconds_since_epoch
+    seconds_since_epoch=$(date --date="$utc_date" +%s)
+    local sequence_number=$(( (seconds_since_epoch + 59) / 60 - 22457216 ))
     say "$sequence_number"
 }
 
@@ -171,6 +172,7 @@ main() {
     if [ -z "$ODF_ETAG" ]; then
 
         # run the OSM PBF to CSV converter Kotlin app on the snapshot to get the initial map data,
+        say "Initializing from snapshot..."
         initialize "$osm_pbf_snapshot_path" "$ODF_NEW_ETAG_PATH"
 
         # (noting that the value output to the etag path is a timestamp)

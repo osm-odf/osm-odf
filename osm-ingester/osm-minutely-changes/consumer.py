@@ -78,8 +78,10 @@ def main():
 
     if VERBOSE:
         print(f"max changeset id: {max_changeset_id}")
+        print(f"sequence number: {sequence_number}")
+        print(f"etag output path: {etag_output_path}")
     with open(etag_output_path, "w") as fh:
-        fh.write(str(max_changeset_id))
+        fh.write(str(sequence_number + 1))
 
 
 def process_diff_data(adiff):

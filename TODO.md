@@ -3,7 +3,7 @@ TODO
 - Bounding box around Berlin for minutely updates
 - S3 bucket
 - What would a minimal demo look like?
-- 
+-
 
 
 ---
@@ -12,7 +12,7 @@ Created docker image but should it be separate for nodes / ways / relations or s
 
 Next up:
 - Find a way to get an OSM PBF programatically that has all the user data
-	- One thing we could do? is to 
+	- One thing we could do? is to
 
 
 
@@ -120,7 +120,7 @@ Error: Unable to access jarfile /app/app.jar
 
 == Sequence numbers and changeset IDs
 
-From pbf to csv we get 
+From pbf to csv we get
 - latest changeset id
 - latest timestamp
 
@@ -135,8 +135,8 @@ Then for OSM minutely
 where 12345... is the epoch timestamp
 
 20250406
-Need to amend shell script with conversion from timestamp to sequence number: 
-something like 
+Need to amend shell script with conversion from timestamp to sequence number:
+something like
 ```
 ODF_ETAG = `osm replication minute --since "$(date -r $ODF_ETAG")" | head -n 1 | awk '{print $1}'`
 ```
@@ -151,10 +151,10 @@ I am going to split out the python project into a git submodule -- easier to wor
 
 (base) ➜  osm-ingester git:(main) ✗ docker run -e NODES=1 -v /tmp:/tmp osm-ingester:latest
 NODES = 1
-WAYS = 
-RELATIONS = 
-TAGS = 
-MEMBERS = 
+WAYS =
+RELATIONS =
+TAGS =
+MEMBERS =
 ODF_ETAG => -1744302620640
 ODF_NEW_ETAG_PATH => /tmp/etag.txt
 Downloading minutely augmented diff #timestamp=1744302620640
@@ -170,10 +170,30 @@ ALso need to add berlin bbox to python script
 
 20250416
 
-consecutive runs of the docker container just run the kotlin program over and over. 
+consecutive runs of the docker container just run the kotlin program over and over.
 Need to figure out why etag.txt is not being interpreted / loaded / whatever
 
 20250509
 
 The OsmToCsvConverter app reads berlin-latest-internal.osm.pbf and finds the max
 timestamp to be something in recent time like the last few minutes. WHY!??!
+
+
+20250518
+
+https://wiki.openstreetmap.org/wiki/Overpass_API/Augmented_Diffs#Deriving_augmented_diff_(%22adiff%22)_identifier_from_a_timestamp:
+The augmented_diff API call
+
+On overpass-api.de exists an API that allows to filter the Augmented Diffs already on the server. The base URL is
+
+ http://overpass-api.de/api/augmented_diff?
+
+It accepts the following two arguments:
+
+    id= is mandatory and is the id of the Augmented Diff to process
+    bbox= is optional and is a min_lon,min_lat,max_lon,max_lat limited bounding box of the area of interest
+
+
+So next up is:
+1. Check what happens when we're all the way caught up
+2. Implement rectangle BBOX (see above)
