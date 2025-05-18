@@ -32,7 +32,6 @@ def write_csv_stdout(rows, fieldnames):
                 del row[k]
         writer.writerow(filtered_row)
 
-
 def to_epoch_millis(ts):
     from datetime import datetime, timezone
     if ts is None:
@@ -54,7 +53,8 @@ def to_epoch_millis(ts):
 
 
 def main():
-    max_changeset_id = 0
+    global max_changeset_id
+
     if len(sys.argv) != 3:
         print("Usage: consumer.py <sequence_number> <etag_output_path>")
         sys.exit(1)
@@ -67,140 +67,11 @@ def main():
     adiff.retrieve()
 
     try:
-        nodes_rows = []
-        for o in adiff.create:
-            max_changeset_id = max(max_changeset_id, int(o.attribs.get("changeset", 0)))
-            if isinstance(o, osmdiff.Node):
-                row = {
-                    "epochMillis": to_epoch_millis(o.attribs.get("timestamp")),
-                    "id": o.attribs.get("id"),
-                    "version": o.attribs.get("version"),
-                    "changeset": o.attribs.get("changeset"),
-                    "username": o.attribs.get("user"),
-                    "uid": o.attribs.get("uid"),
-                    "lat": o.attribs.get("lat"),
-                    "lon": o.attribs.get("lon"),
-                }
-                nodes_rows.append(row)
+        nodes_rows, ways_rows, relations_rows, members_rows, tags_rows = process_diff_data(adiff)
 
-        ways_rows = []
-        for o in adiff.create:
-            max_changeset_id = max(max_changeset_id, int(o.attribs.get("changeset", 0)))
-            if isinstance(o, osmdiff.Way):
-                row = {
-                    "epochMillis": to_epoch_millis(o.attribs.get("timestamp")),
-                    "id": o.attribs.get("id"),
-                    "version": o.attribs.get("version"),
-                    "changeset": o.attribs.get("changeset"),
-                    "username": o.attribs.get("user"),
-                    "uid": o.attribs.get("uid"),
-                    "geometry": o.attribs.get("geometry"),
-                }
-                ways_rows.append(row)
+        output_csv_data(nodes_rows, ways_rows, relations_rows, members_rows, tags_rows)
 
-        relations_rows = []
-        for o in adiff.create:
-            if isinstance(o, osmdiff.Relation):
-                row = {
-                    "epochMillis": to_epoch_millis(o.attribs.get("timestamp")),
-                    "id": o.attribs.get("id"),
-                    "version": o.attribs.get("version"),
-                    "changeset": o.attribs.get("changeset"),
-                    "username": o.attribs.get("user"),
-                    "uid": o.attribs.get("uid"),
-                    "geometry": o.attribs.get("geometry"),
-                }
-                max_changeset_id = max(max_changeset_id, int(o.attribs.get("changeset", 0)))
-                relations_rows.append(row)
-
-        # Members and tags may need similar filtering/flattening if used
-        members_rows = []
-        for o in adiff.create:
-            if isinstance(o, osmdiff.Relation):
-                for m in getattr(o, 'members', []):
-                    members_rows.append({
-                        "relationId": o.attribs.get("id"),
-                        "memberId": m.attribs.get("ref"),
-                        "memberRole": m.attribs.get("role"),
-                        "memberType": m.attribs.get("type"),
-                    })
-
-        tags_rows = []
-        for o in adiff.create:
-            # extract all tags
-            for k, v in o.attribs.items():
-                if k == "id":
-                    continue
-                osm_type = "node" if isinstance(o, osmdiff.Node) else "way" if isinstance(o, osmdiff.Way) else "relation"
-                tags_rows.append({
-                    "epochMillis": to_epoch_millis(o.attribs.get("timestamp")),
-                    # type is "node", "way", or "relation"
-                    "type": osm_type,
-                    "id": o.attribs.get("id"),
-                    "key": k,
-                    "value": v,
-                })
-
-        # Write nodes CSV with the specified columns.
-        if VERBOSE:
-            print("\n--- nodes.csv ---")
-        if NODES:
-            node_fields = [
-                "epochMillis",
-                "id",
-                "version",
-                "changeset",
-                "username",
-                "uid",
-                "lat",
-                "lon",
-            ]
-            write_csv_stdout(nodes_rows, node_fields)
-
-        if WAYS:
-            way_fields = [
-                "epochMillis",
-                "id",
-                "version",
-                "changeset",
-                "username",
-                "uid",
-                "geometry",
-            ]
-            write_csv_stdout(ways_rows, way_fields)
-
-        if RELATIONS:
-            relation_fields = [
-                "epochMillis",
-                "id",
-                "version",
-                "changeset",
-                "username",
-                "uid",
-                "geometry",
-            ]
-            write_csv_stdout(relations_rows, relation_fields)
-
-        if MEMBERS:
-            members_fields = ["relationId", "memberId", "memberRole", "memberType"]
-            write_csv_stdout(members_rows, members_fields)
-
-        if TAGS:
-            tags_fields = ["epochMillis", "type", "id", "key", "value"]
-            write_csv_stdout(tags_rows, tags_fields)
-
-        if VERBOSE:
-            print("Processing complete")
-            if NODES:
-                print(f"Processed {len(nodes_rows)} nodes")
-            if WAYS:
-                print(f"Processed {len(ways_rows)} ways")
-            if RELATIONS:
-                print(f"Processed {len(relations_rows)} relations")
-            if MEMBERS:
-                print(f"Processed {len(members_rows)} members")
-            if TAGS:
-                print(f"Processed {len(tags_rows)} tags")
+        log_processing_results(nodes_rows, ways_rows, relations_rows, members_rows, tags_rows)
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -209,6 +80,160 @@ def main():
         print(f"max changeset id: {max_changeset_id}")
     with open(etag_output_path, "w") as fh:
         fh.write(str(max_changeset_id))
+
+
+def process_diff_data(adiff):
+    """Process OSM diff data and extract rows for each entity type."""
+    global max_changeset_id
+
+    nodes_rows = []
+    ways_rows = []
+    relations_rows = []
+    members_rows = []
+    tags_rows = []
+
+    for o in adiff.create:
+        # Update max changeset ID
+        max_changeset_id = max(max_changeset_id, int(o.attribs.get("changeset", 0)))
+
+        # Process by entity type
+        if isinstance(o, osmdiff.Node):
+            process_node(o, nodes_rows)
+        elif isinstance(o, osmdiff.Way):
+            process_way(o, ways_rows)
+        elif isinstance(o, osmdiff.Relation):
+            process_relation(o, relations_rows, members_rows)
+
+        # Process tags for all entity types
+        process_tags(o, tags_rows)
+
+    return nodes_rows, ways_rows, relations_rows, members_rows, tags_rows
+
+
+def process_node(node, nodes_rows):
+    """Process a single node and add it to nodes_rows."""
+    row = {
+        "epochMillis": to_epoch_millis(node.attribs.get("timestamp")),
+        "id": node.attribs.get("id"),
+        "version": node.attribs.get("version"),
+        "changeset": node.attribs.get("changeset"),
+        "username": node.attribs.get("user"),
+        "uid": node.attribs.get("uid"),
+        "lat": node.attribs.get("lat"),
+        "lon": node.attribs.get("lon"),
+    }
+    nodes_rows.append(row)
+
+
+def process_way(way, ways_rows):
+    """Process a single way and add it to ways_rows."""
+    row = {
+        "epochMillis": to_epoch_millis(way.attribs.get("timestamp")),
+        "id": way.attribs.get("id"),
+        "version": way.attribs.get("version"),
+        "changeset": way.attribs.get("changeset"),
+        "username": way.attribs.get("user"),
+        "uid": way.attribs.get("uid"),
+        "geometry": way.attribs.get("geometry"),
+    }
+    ways_rows.append(row)
+
+
+def process_relation(relation, relations_rows, members_rows):
+    """Process a single relation and add it to relations_rows and its members to members_rows."""
+    row = {
+        "epochMillis": to_epoch_millis(relation.attribs.get("timestamp")),
+        "id": relation.attribs.get("id"),
+        "version": relation.attribs.get("version"),
+        "changeset": relation.attribs.get("changeset"),
+        "username": relation.attribs.get("user"),
+        "uid": relation.attribs.get("uid"),
+        "geometry": relation.attribs.get("geometry"),
+    }
+    relations_rows.append(row)
+
+    # Process relation members
+    for m in getattr(relation, 'members', []):
+        members_rows.append({
+            "relationId": relation.attribs.get("id"),
+            "memberId": m.attribs.get("ref"),
+            "memberRole": m.attribs.get("role"),
+            "memberType": m.attribs.get("type"),
+        })
+
+
+def process_tags(entity, tags_rows):
+    """Process tags for an entity and add them to tags_rows."""
+    for k, v in entity.attribs.items():
+        if k == "id":
+            continue
+
+        osm_type = "node"
+        if isinstance(entity, osmdiff.Way):
+            osm_type = "way"
+        elif isinstance(entity, osmdiff.Relation):
+            osm_type = "relation"
+
+        tags_rows.append({
+            "epochMillis": to_epoch_millis(entity.attribs.get("timestamp")),
+            "type": osm_type,
+            "id": entity.attribs.get("id"),
+            "key": k,
+            "value": v,
+        })
+
+
+def output_csv_data(nodes_rows, ways_rows, relations_rows, members_rows, tags_rows):
+    """Output CSV data for all OSM entity types."""
+    if VERBOSE:
+        print("\n--- nodes.csv ---")
+
+    if NODES:
+        node_fields = [
+            "epochMillis", "id", "version", "changeset",
+            "username", "uid", "lat", "lon",
+        ]
+        write_csv_stdout(nodes_rows, node_fields)
+
+    if WAYS:
+        way_fields = [
+            "epochMillis", "id", "version", "changeset",
+            "username", "uid", "geometry",
+        ]
+        write_csv_stdout(ways_rows, way_fields)
+
+    if RELATIONS:
+        relation_fields = [
+            "epochMillis", "id", "version", "changeset",
+            "username", "uid", "geometry",
+        ]
+        write_csv_stdout(relations_rows, relation_fields)
+
+    if MEMBERS:
+        members_fields = ["relationId", "memberId", "memberRole", "memberType"]
+        write_csv_stdout(members_rows, members_fields)
+
+    if TAGS:
+        tags_fields = ["epochMillis", "type", "id", "key", "value"]
+        write_csv_stdout(tags_rows, tags_fields)
+
+
+def log_processing_results(nodes_rows, ways_rows, relations_rows, members_rows, tags_rows):
+    """Log processing results if in verbose mode."""
+    if not VERBOSE:
+        return
+
+    print("Processing complete")
+    if NODES:
+        print(f"Processed {len(nodes_rows)} nodes")
+    if WAYS:
+        print(f"Processed {len(ways_rows)} ways")
+    if RELATIONS:
+        print(f"Processed {len(relations_rows)} relations")
+    if MEMBERS:
+        print(f"Processed {len(members_rows)} members")
+    if TAGS:
+        print(f"Processed {len(tags_rows)} tags")
 
 
 if __name__ == "__main__":
