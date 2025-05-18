@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-import requests
 import time
 import csv
 import sys
-import io
 import os
-from datetime import datetime
 import osmdiff
 
 # epoch in seconds
@@ -18,9 +15,7 @@ RELATIONS = os.getenv("RELATIONS", 0)
 MEMBERS = os.getenv("MEMBERS", 0)
 TAGS = os.getenv("TAGS", 0)
 
-
 max_changeset_id = 0
-
 
 def write_csv_stdout(rows, fieldnames):
     """Write rows (a list of dictionaries) as CSV to stdout, filtering only allowed fields."""
@@ -38,13 +33,33 @@ def write_csv_stdout(rows, fieldnames):
         writer.writerow(filtered_row)
 
 
+def to_epoch_millis(ts):
+    from datetime import datetime, timezone
+    if ts is None:
+        return None
+    if isinstance(ts, (int, float)):
+        # Assume already ms
+        return int(ts)
+    # Try ISO8601 parsing (e.g. '2025-03-03T11:55:24Z')
+    try:
+        dt = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
+        return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
+    except Exception:
+        pass
+    # Try as float seconds
+    try:
+        return int(float(ts) * 1000)
+    except Exception:
+        return None
+
+
 def main():
     max_changeset_id = 0
     if len(sys.argv) != 3:
         print("Usage: consumer.py <sequence_number> <etag_output_path>")
         sys.exit(1)
 
-    sequence_number = sys.argv[1]
+    sequence_number = int(sys.argv[1])
     etag_output_path = sys.argv[2]
 
     adiff = osmdiff.AugmentedDiff()
@@ -52,26 +67,6 @@ def main():
     adiff.retrieve()
 
     try:
-        # Transform osmdiff objects to expected CSV dicts
-        from datetime import datetime, timezone
-        def to_epoch_millis(ts):
-            if ts is None:
-                return None
-            if isinstance(ts, (int, float)):
-                # Assume already ms
-                return int(ts)
-            # Try ISO8601 parsing (e.g. '2025-03-03T11:55:24Z')
-            try:
-                dt = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
-                return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
-            except Exception:
-                pass
-            # Try as float seconds
-            try:
-                return int(float(ts) * 1000)
-            except Exception:
-                return None
-
         nodes_rows = []
         for o in adiff.create:
             max_changeset_id = max(max_changeset_id, int(o.attribs.get("changeset", 0)))
@@ -129,7 +124,7 @@ def main():
                         "memberRole": m.attribs.get("role"),
                         "memberType": m.attribs.get("type"),
                     })
-        
+
         tags_rows = []
         for o in adiff.create:
             # extract all tags
@@ -144,7 +139,7 @@ def main():
                     "id": o.attribs.get("id"),
                     "key": k,
                     "value": v,
-                })  
+                })
 
         # Write nodes CSV with the specified columns.
         if VERBOSE:
