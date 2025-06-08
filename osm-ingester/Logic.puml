@@ -1,0 +1,35 @@
+@startuml script-logic
+'https://plantuml.com/activity-diagram-beta
+
+start
+:**ODF_ETAG** - Position in input to begin ingesting from
+**ODF_NEW_ETAG_PATH** - Path to write ODF_ETAG for next ingestion to
+**NODES, WAYS, RELATIONS, MEMBERS, TAGS** - Which kind of data to ingest (**only one may be non-empty**);
+
+if (countNonEmpty(**NODES, WAYS, RELATIONS, MEMBERS, TAGS**) != 1) then (error)
+    stop
+endif
+
+if (empty(**ODF_ETAG**)?) then (empty)
+
+  :read PBF snapshot
+  write CSV to **stdout**
+  write **-maxTimestamp** to **ODF_NEW_ETAG_PATH**;
+
+else (non-empty)
+
+  if (**ODF_ETAG** < 0) then (is timestamp)
+    :**sequence_number** = timestamp_to_sequence_number(**ODF_ETAG**);
+  else (is sequence number)
+    :**sequence_number** = **ODF_ETAG**;
+  endif
+
+  :read augmented diff for **sequence_number**
+  write CSV to **stdout**
+  write **sequence_number** to **ODF_NEW_ETAG_PATH**;
+
+endif
+
+stop
+
+@enduml
